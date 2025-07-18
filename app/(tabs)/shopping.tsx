@@ -1,23 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
-import { 
-  Surface, 
-  Card, 
-  Title, 
-  Button, 
-  FAB, 
+import {
+  Surface,
+  Card,
+  Button,
+  FAB,
   useTheme,
   Text,
   Divider,
   Chip,
   IconButton,
   List,
-  Checkbox
+  Checkbox,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, ShoppingBag, Chrome as Home, Car, Heart, Package, Utensils, Shirt } from 'lucide-react-native';
+import {
+  Plus,
+  ShoppingBag,
+  Chrome as Home,
+  Car,
+  Heart,
+  Package,
+  Utensils,
+  Shirt,
+} from 'lucide-react-native';
 import AddShoppingItemModal from '@/components/AddShoppingItemModal';
-import { useShoppingLists } from '@/hooks/useShoppingLists';
+import { useShoppingListsContext } from '@/contexts/ShoppingListsContext';
+import { ShoppingList } from '@/hooks/useShoppingLists';
+import { useAuth } from '@/contexts/AuthContext';
 
 const shoppingCategories = [
   { id: 'groceries', name: 'Groceries', icon: Utensils, color: '#36A2EB' },
@@ -25,52 +35,65 @@ const shoppingCategories = [
   { id: 'household', name: 'Household', icon: Home, color: '#4BC0C0' },
   { id: 'electronics', name: 'Electronics', icon: Package, color: '#9966FF' },
   { id: 'health', name: 'Health & Beauty', icon: Heart, color: '#FFCE56' },
-  { id: 'general', name: 'General', icon: ShoppingBag, color: '#FF9F40' }
+  { id: 'general', name: 'General', icon: ShoppingBag, color: '#FF9F40' },
 ];
 
 export default function ShoppingScreen() {
   const theme = useTheme();
-  const { lists, loading, addList, addItem, toggleItem, deleteItem } = useShoppingLists();
+  const { lists, loading, addList, addItem, toggleItem, deleteItem, refetch } =
+    useShoppingListsContext();
   const [activeCategory, setActiveCategory] = useState('groceries');
+  const { user } = useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [currentActiveList, setCurrentActiveList] = useState<
+    ShoppingList | undefined
+  >(undefined);
 
-  // Get or create list for active category
-  const getActiveList = () => {
-    const categoryData = shoppingCategories.find(cat => cat.id === activeCategory);
-    let activeList = lists.find(list => list.category === activeCategory);
-    
-    if (!activeList && categoryData) {
-      // Create a new list for this category
-      addList({
-        category: activeCategory,
-        name: categoryData.name
-      });
-      activeList = { 
-        id: 'temp', 
-        category: activeCategory, 
-        name: categoryData.name, 
-        is_completed: false, 
-        created_at: new Date().toISOString(),
-        items: [] 
-      };
-    }
-    
-    return activeList;
-  };
+  useEffect(() => {
+    const updateActiveList = async () => {
+      // Only proceed if loading is false, meaning lists have been fetched
+      if (!loading) {
+        const categoryData = shoppingCategories.find(
+          (cat) => cat.id === activeCategory
+        );
+        let foundList = lists.find((list) => list.category === activeCategory);
 
-  const activeList = getActiveList();
-  const activeItems = activeList?.items || [];
-  const activeCategoryData = shoppingCategories.find(cat => cat.id === activeCategory);
+        if (!foundList && categoryData && user?.id) {
+          // Create a new list for this category and await its creation
+          const result = await addList({
+            category: activeCategory,
+            name: categoryData.name,
+          });
+
+          if (result.success && result.data) {
+            foundList = result.data; // Use the actual list data returned from the database
+            await refetch(); // Ensure lists are re-fetched after adding a new one
+          }
+        }
+        setCurrentActiveList(foundList);
+      }
+    };
+
+    updateActiveList();
+  }, [activeCategory, lists, addList, refetch, loading, user?.id]);
+
+  const activeItems = currentActiveList?.shopping_items || [];
+  const activeCategoryData = shoppingCategories.find(
+    (cat) => cat.id === activeCategory
+  );
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'USD',
     }).format(amount);
   };
 
   const getTotalEstimated = () => {
-    return activeItems.reduce((sum, item) => sum + (item.estimated_cost || 0), 0);
+    return activeItems.reduce(
+      (sum, item) => sum + (item.estimated_cost || 0),
+      0
+    );
   };
 
   const getTotalActual = () => {
@@ -78,7 +101,7 @@ export default function ShoppingScreen() {
   };
 
   const getPurchasedCount = () => {
-    return activeItems.filter(item => item.is_purchased).length;
+    return activeItems.filter((item) => item.is_purchased).length;
   };
 
   const handleToggleItem = (itemId: string) => {
@@ -86,30 +109,28 @@ export default function ShoppingScreen() {
   };
 
   const handleAddItem = (itemData: any) => {
-    if (activeList && activeList.id !== 'temp') {
-      addItem(activeList.id, itemData);
+    if (currentActiveList && currentActiveList.id) {
+      addItem(currentActiveList.id, itemData);
     }
     setShowAddModal(false);
   };
 
   const handleDeleteItem = (itemId: string) => {
-    Alert.alert(
-      'Delete Item',
-      'Are you sure you want to delete this item?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: () => deleteItem(itemId)
-        }
-      ]
-    );
+    Alert.alert('Delete Item', 'Are you sure you want to delete this item?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => deleteItem(itemId),
+      },
+    ]);
   };
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: theme.colors.background }]}
+      >
         <View style={styles.loadingContainer}>
           <Text>Loading shopping lists...</Text>
         </View>
@@ -118,16 +139,25 @@ export default function ShoppingScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       <View style={styles.header}>
-        <Title style={[styles.title, { color: theme.colors.onBackground }]}>
+        <Text
+          variant="titleLarge"
+          style={[styles.title, { color: theme.colors.onBackground }]}
+        >
           Shopping Lists
-        </Title>
+        </Text>
       </View>
 
       {/* Category Tabs */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryTabs}>
-        {shoppingCategories.map(category => (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoryTabs}
+      >
+        {shoppingCategories.map((category) => (
           <Chip
             key={category.id}
             selected={activeCategory === category.id}
@@ -141,38 +171,68 @@ export default function ShoppingScreen() {
       </ScrollView>
 
       {/* Shopping Summary */}
-      <Card style={[styles.summaryCard, { backgroundColor: theme.colors.surface }]}>
+      <Card
+        style={[styles.summaryCard, { backgroundColor: theme.colors.surface }]}
+      >
         <Card.Content>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
-              <Text style={[styles.summaryLabel, { color: theme.colors.onSurfaceVariant }]}>
+              <Text
+                style={[
+                  styles.summaryLabel,
+                  { color: theme.colors.onSurfaceVariant },
+                ]}
+              >
                 Total Items
               </Text>
-              <Text style={[styles.summaryValue, { color: theme.colors.onSurface }]}>
+              <Text
+                style={[styles.summaryValue, { color: theme.colors.onSurface }]}
+              >
                 {activeItems.length}
               </Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={[styles.summaryLabel, { color: theme.colors.onSurfaceVariant }]}>
+              <Text
+                style={[
+                  styles.summaryLabel,
+                  { color: theme.colors.onSurfaceVariant },
+                ]}
+              >
                 Purchased
               </Text>
-              <Text style={[styles.summaryValue, { color: theme.colors.primary }]}>
+              <Text
+                style={[styles.summaryValue, { color: theme.colors.primary }]}
+              >
                 {getPurchasedCount()}
               </Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={[styles.summaryLabel, { color: theme.colors.onSurfaceVariant }]}>
+              <Text
+                style={[
+                  styles.summaryLabel,
+                  { color: theme.colors.onSurfaceVariant },
+                ]}
+              >
                 Estimated
               </Text>
-              <Text style={[styles.summaryValue, { color: theme.colors.onSurface }]}>
+              <Text
+                style={[styles.summaryValue, { color: theme.colors.onSurface }]}
+              >
                 {formatCurrency(getTotalEstimated())}
               </Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={[styles.summaryLabel, { color: theme.colors.onSurfaceVariant }]}>
+              <Text
+                style={[
+                  styles.summaryLabel,
+                  { color: theme.colors.onSurfaceVariant },
+                ]}
+              >
                 Actual
               </Text>
-              <Text style={[styles.summaryValue, { color: theme.colors.error }]}>
+              <Text
+                style={[styles.summaryValue, { color: theme.colors.error }]}
+              >
                 {formatCurrency(getTotalActual())}
               </Text>
             </View>
@@ -183,16 +243,32 @@ export default function ShoppingScreen() {
       {/* Shopping Items */}
       <ScrollView style={styles.itemsList} showsVerticalScrollIndicator={false}>
         {activeItems.length === 0 ? (
-          <Card style={[styles.emptyCard, { backgroundColor: theme.colors.surface }]}>
+          <Card
+            style={[
+              styles.emptyCard,
+              { backgroundColor: theme.colors.surface },
+            ]}
+          >
             <Card.Content>
-              <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
+              <Text
+                style={[
+                  styles.emptyText,
+                  { color: theme.colors.onSurfaceVariant },
+                ]}
+              >
                 No items in this category yet. Add some items to get started!
               </Text>
             </Card.Content>
           </Card>
         ) : (
           activeItems.map((item) => (
-            <Card key={item.id} style={[styles.itemCard, { backgroundColor: theme.colors.surface }]}>
+            <Card
+              key={item.id}
+              style={[
+                styles.itemCard,
+                { backgroundColor: theme.colors.surface },
+              ]}
+            >
               <Card.Content>
                 <View style={styles.itemRow}>
                   <Checkbox
@@ -200,21 +276,35 @@ export default function ShoppingScreen() {
                     onPress={() => handleToggleItem(item.id)}
                   />
                   <View style={styles.itemDetails}>
-                    <Text style={[
-                      styles.itemName, 
-                      { 
-                        color: theme.colors.onSurface,
-                        textDecorationLine: item.is_purchased ? 'line-through' : 'none'
-                      }
-                    ]}>
+                    <Text
+                      style={[
+                        styles.itemName,
+                        {
+                          color: theme.colors.onSurface,
+                          textDecorationLine: item.is_purchased
+                            ? 'line-through'
+                            : 'none',
+                        },
+                      ]}
+                    >
                       {item.name}
                     </Text>
                     <View style={styles.itemCosts}>
-                      <Text style={[styles.estimatedCost, { color: theme.colors.onSurfaceVariant }]}>
+                      <Text
+                        style={[
+                          styles.estimatedCost,
+                          { color: theme.colors.onSurfaceVariant },
+                        ]}
+                      >
                         Est: {formatCurrency(item.estimated_cost || 0)}
                       </Text>
                       {item.is_purchased && (
-                        <Text style={[styles.actualCost, { color: theme.colors.error }]}>
+                        <Text
+                          style={[
+                            styles.actualCost,
+                            { color: theme.colors.error },
+                          ]}
+                        >
                           Actual: {formatCurrency(item.actual_cost || 0)}
                         </Text>
                       )}
@@ -236,7 +326,16 @@ export default function ShoppingScreen() {
       <FAB
         icon={() => <Plus size={24} color={theme.colors.onPrimary} />}
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        onPress={() => setShowAddModal(true)}
+        onPress={() => {
+          if (currentActiveList && currentActiveList.id) {
+            setShowAddModal(true);
+          } else {
+            Alert.alert(
+              'Please wait',
+              'Shopping list is being prepared. Please try again in a moment.'
+            );
+          }
+        }}
       />
 
       <AddShoppingItemModal
@@ -270,6 +369,9 @@ const styles = StyleSheet.create({
   categoryTabs: {
     paddingHorizontal: 16,
     paddingVertical: 8,
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 'auto',
   },
   categoryChip: {
     marginRight: 8,
