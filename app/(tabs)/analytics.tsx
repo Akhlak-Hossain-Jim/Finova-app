@@ -24,17 +24,17 @@ import {
   Target,
   DollarSign,
 } from 'lucide-react-native';
-import { useExpenses } from '@/hooks/useExpenses';
-import { useIncome } from '@/hooks/useIncome';
-import { useSavingsGoals } from '@/hooks/useSavingsGoals';
+import { useExpensesContext } from '@/contexts/ExpensesContext';
+import { useIncomeContext } from '@/contexts/IncomeContext';
+import { useSavingsGoalsContext } from '@/contexts/SavingsGoalsContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function AnalyticsScreen() {
   const theme = useTheme();
-  const { expenses, loading: expensesLoading } = useExpenses();
-  const { income, loading: incomeLoading } = useIncome();
-  const { goals, loading: goalsLoading } = useSavingsGoals();
+  const { expenses, loading: expensesLoading } = useExpensesContext();
+  const { income, loading: incomeLoading } = useIncomeContext();
+  const { goals, loading: goalsLoading } = useSavingsGoalsContext();
   const [selectedPeriod, setSelectedPeriod] = useState('monthly');
 
   const formatCurrency = (amount: number) => {

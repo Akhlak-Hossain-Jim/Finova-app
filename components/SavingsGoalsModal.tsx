@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { 
-  Modal, 
-  Portal, 
-  Card, 
-  Title, 
-  Button, 
+import {
+  Modal,
+  Portal,
+  Card,
+  Title,
+  Button,
   TextInput,
   useTheme,
   Text,
   ProgressBar,
-  FAB
+  FAB,
 } from 'react-native-paper';
 import { X, Target, Plus, Calendar, DollarSign } from 'lucide-react-native';
 import { useSavingsGoals } from '@/hooks/useSavingsGoals';
@@ -20,7 +20,10 @@ interface SavingsGoalsModalProps {
   onDismiss: () => void;
 }
 
-export default function SavingsGoalsModal({ visible, onDismiss }: SavingsGoalsModalProps) {
+export default function SavingsGoalsModal({
+  visible,
+  onDismiss,
+}: SavingsGoalsModalProps) {
   const theme = useTheme();
   const { goals, addGoal, loading } = useSavingsGoals();
   const [showAddGoal, setShowAddGoal] = useState(false);
@@ -31,7 +34,7 @@ export default function SavingsGoalsModal({ visible, onDismiss }: SavingsGoalsMo
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'USD',
     }).format(amount);
   };
 
@@ -55,10 +58,10 @@ export default function SavingsGoalsModal({ visible, onDismiss }: SavingsGoalsMo
     const goalData = {
       title: goalTitle,
       target_amount: parseFloat(targetAmount),
-      target_date: targetDate || undefined
+      target_date: targetDate || undefined,
     };
 
-    addGoal(goalData).then(result => {
+    addGoal(goalData).then((result) => {
       if (result.success) {
         setGoalTitle('');
         setTargetAmount('');
@@ -80,16 +83,22 @@ export default function SavingsGoalsModal({ visible, onDismiss }: SavingsGoalsMo
       <Modal
         visible={visible}
         onDismiss={onDismiss}
-        contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
+        contentContainerStyle={[
+          styles.modal,
+          { backgroundColor: theme.colors.surface },
+        ]}
       >
         <Card style={{ backgroundColor: theme.colors.surface }}>
           <Card.Content>
             <View style={styles.header}>
-              <Title style={[styles.title, { color: theme.colors.onSurface }]}>
+              <Text
+                variant="titleLarge"
+                style={[styles.title, { color: theme.colors.onSurface }]}
+              >
                 Savings Goals
-              </Title>
-              <Button 
-                mode="text" 
+              </Text>
+              <Button
+                mode="text"
                 onPress={onDismiss}
                 icon={() => <X size={20} color={theme.colors.onSurface} />}
               >
@@ -98,31 +107,70 @@ export default function SavingsGoalsModal({ visible, onDismiss }: SavingsGoalsMo
             </View>
 
             {!showAddGoal ? (
-              <ScrollView showsVerticalScrollIndicator={false} style={styles.goalsList}>
-                {goals.map(goal => (
-                  <Card key={goal.id} style={[styles.goalCard, { backgroundColor: theme.colors.surfaceVariant }]}>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                style={styles.goalsList}
+              >
+                {goals.map((goal) => (
+                  <Card
+                    key={goal.id}
+                    style={[
+                      styles.goalCard,
+                      { backgroundColor: theme.colors.surfaceVariant },
+                    ]}
+                  >
                     <Card.Content>
                       <View style={styles.goalHeader}>
-                        <Text style={[styles.goalTitle, { color: theme.colors.onSurface }]}>
+                        <Text
+                          style={[
+                            styles.goalTitle,
+                            { color: theme.colors.onSurface },
+                          ]}
+                        >
                           {goal.title}
                         </Text>
-                        <Text style={[styles.goalAmount, { color: theme.colors.primary }]}>
-                          {formatCurrency(goal.current_amount)} / {formatCurrency(goal.target_amount)}
+                        <Text
+                          style={[
+                            styles.goalAmount,
+                            { color: theme.colors.primary },
+                          ]}
+                        >
+                          {formatCurrency(goal.current_amount)} /{' '}
+                          {formatCurrency(goal.target_amount)}
                         </Text>
                       </View>
-                      
+
                       <ProgressBar
-                        progress={getProgress(goal.current_amount, goal.target_amount)}
+                        progress={getProgress(
+                          goal.current_amount,
+                          goal.target_amount
+                        )}
                         color={theme.colors.primary}
                         style={styles.progressBar}
                       />
-                      
+
                       <View style={styles.goalInfo}>
-                        <Text style={[styles.goalProgress, { color: theme.colors.onSurfaceVariant }]}>
-                          {Math.round(getProgress(goal.current_amount, goal.target_amount) * 100)}% Complete
+                        <Text
+                          style={[
+                            styles.goalProgress,
+                            { color: theme.colors.onSurfaceVariant },
+                          ]}
+                        >
+                          {Math.round(
+                            getProgress(
+                              goal.current_amount,
+                              goal.target_amount
+                            ) * 100
+                          )}
+                          % Complete
                         </Text>
                         {goal.target_date && (
-                          <Text style={[styles.goalDate, { color: theme.colors.onSurfaceVariant }]}>
+                          <Text
+                            style={[
+                              styles.goalDate,
+                              { color: theme.colors.onSurfaceVariant },
+                            ]}
+                          >
                             {getDaysRemaining(goal.target_date)} days remaining
                           </Text>
                         )}
@@ -139,7 +187,16 @@ export default function SavingsGoalsModal({ visible, onDismiss }: SavingsGoalsMo
                   onChangeText={setGoalTitle}
                   mode="outlined"
                   style={styles.input}
-                  left={<TextInput.Icon icon={() => <Target size={20} color={theme.colors.onSurfaceVariant} />} />}
+                  left={
+                    <TextInput.Icon
+                      icon={() => (
+                        <Target
+                          size={20}
+                          color={theme.colors.onSurfaceVariant}
+                        />
+                      )}
+                    />
+                  }
                   placeholder="e.g., Emergency Fund, Vacation"
                 />
 
@@ -150,7 +207,16 @@ export default function SavingsGoalsModal({ visible, onDismiss }: SavingsGoalsMo
                   keyboardType="numeric"
                   mode="outlined"
                   style={styles.input}
-                  left={<TextInput.Icon icon={() => <DollarSign size={20} color={theme.colors.onSurfaceVariant} />} />}
+                  left={
+                    <TextInput.Icon
+                      icon={() => (
+                        <DollarSign
+                          size={20}
+                          color={theme.colors.onSurfaceVariant}
+                        />
+                      )}
+                    />
+                  }
                   placeholder="0.00"
                 />
 
@@ -160,7 +226,16 @@ export default function SavingsGoalsModal({ visible, onDismiss }: SavingsGoalsMo
                   onChangeText={setTargetDate}
                   mode="outlined"
                   style={styles.input}
-                  left={<TextInput.Icon icon={() => <Calendar size={20} color={theme.colors.onSurfaceVariant} />} />}
+                  left={
+                    <TextInput.Icon
+                      icon={() => (
+                        <Calendar
+                          size={20}
+                          color={theme.colors.onSurfaceVariant}
+                        />
+                      )}
+                    />
+                  }
                   placeholder="YYYY-MM-DD"
                 />
 
@@ -183,16 +258,15 @@ export default function SavingsGoalsModal({ visible, onDismiss }: SavingsGoalsMo
                 </View>
               </View>
             )}
+            {!showAddGoal && (
+              <FAB
+                icon={() => <Plus size={24} color={theme.colors.onPrimary} />}
+                style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+                onPress={() => setShowAddGoal(true)}
+              />
+            )}
           </Card.Content>
         </Card>
-
-        {!showAddGoal && (
-          <FAB
-            icon={() => <Plus size={24} color={theme.colors.onPrimary} />}
-            style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-            onPress={() => setShowAddGoal(true)}
-          />
-        )}
       </Modal>
     </Portal>
   );
@@ -269,9 +343,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fab: {
-    position: 'absolute',
-    right: 16,
-    bottom: 16,
+    alignItems: 'center',
     elevation: 6,
   },
 });
