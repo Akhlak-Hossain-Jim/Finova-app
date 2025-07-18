@@ -1,3 +1,4 @@
+import 'core-js/actual/structured-clone';
 import { View, Text } from 'react-native';
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
@@ -6,6 +7,8 @@ import { PaperProvider, MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
 import { useColorScheme } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ExpensesProvider } from '@/contexts/ExpensesContext';
+import { ShoppingListsProvider } from '@/contexts/ShoppingListsContext';
 // import { DynamicRoutes } from "@/components/DynamicRoutes";
 
 const lightTheme = {
@@ -52,15 +55,19 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <PaperProvider theme={colorScheme === 'dark' ? darkTheme : lightTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(tabs)" />
-          {/* <DynamicRoutes /> */}
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="auto" />
-      </PaperProvider>
+      <ExpensesProvider>
+        <ShoppingListsProvider>
+          <PaperProvider theme={colorScheme === 'dark' ? darkTheme : lightTheme}>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(tabs)" />
+              {/* <DynamicRoutes /> */}
+              <Stack.Screen name="+not-found" />
+            </Stack>
+            <StatusBar style="auto" />
+          </PaperProvider>
+        </ShoppingListsProvider>
+      </ExpensesProvider>
     </AuthProvider>
   );
 }
