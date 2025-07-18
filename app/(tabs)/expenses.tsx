@@ -1,67 +1,84 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
-import { 
-  Surface, 
-  Card, 
-  Title, 
-  Button, 
-  FAB, 
+import {
+  Surface,
+  Card,
+  Button,
+  FAB,
   useTheme,
   Text,
   Divider,
   Chip,
-  IconButton
+  IconButton,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, Chrome as Home, ShoppingBag, Car, Heart, CreditCard, Users, Gift, Calendar, Filter } from 'lucide-react-native';
+import {
+  Plus,
+  Chrome as Home,
+  ShoppingBag,
+  Car,
+  Heart,
+  CreditCard,
+  Users,
+  Gift,
+  Calendar,
+  Filter,
+} from 'lucide-react-native';
 import AddExpenseModal from '@/components/AddExpenseModal';
-import { useExpenses } from '@/hooks/useExpenses';
+import { useExpensesContext } from '@/contexts/ExpensesContext';
 
 export default function ExpensesScreen() {
   const theme = useTheme();
-  const { expenses, categories, loading, deleteExpense } = useExpenses();
+  const { expenses, categories, loading, addExpense, deleteExpense } =
+    useExpensesContext();
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  const filteredExpenses = selectedCategory === 'all' 
-    ? expenses 
-    : expenses.filter(expense => expense.category.toLowerCase().includes(selectedCategory));
+  const filteredExpenses =
+    selectedCategory === 'all'
+      ? expenses
+      : expenses.filter((expense) =>
+          expense.category.toLowerCase().includes(selectedCategory)
+        );
 
-  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalExpenses = filteredExpenses.reduce(
+    (sum, expense) => sum + expense.amount,
+    0
+  );
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'USD',
     }).format(amount);
   };
 
   const getCategoryIcon = (categoryName: string) => {
     const iconMap: { [key: string]: any } = {
-      'housing': Home,
-      'food': ShoppingBag,
-      'shopping': ShoppingBag,
-      'health': Heart,
-      'transport': Car,
-      'financial': CreditCard,
-      'family': Users,
-      'charity': Gift,
-      'annual': Calendar
+      housing: Home,
+      food: ShoppingBag,
+      shopping: ShoppingBag,
+      health: Heart,
+      transport: Car,
+      financial: CreditCard,
+      family: Users,
+      charity: Gift,
+      annual: Calendar,
     };
     return iconMap[categoryName.toLowerCase()] || ShoppingBag;
   };
 
   const getCategoryColor = (categoryName: string) => {
     const colorMap: { [key: string]: string } = {
-      'housing': '#FF6384',
-      'food': '#36A2EB',
-      'shopping': '#FFCE56',
-      'health': '#4BC0C0',
-      'transport': '#9966FF',
-      'financial': '#FF9F40',
-      'family': '#FF6384',
-      'charity': '#4BC0C0',
-      'annual': '#36A2EB'
+      housing: '#FF6384',
+      food: '#36A2EB',
+      shopping: '#FFCE56',
+      health: '#4BC0C0',
+      transport: '#9966FF',
+      financial: '#FF9F40',
+      family: '#FF6384',
+      charity: '#4BC0C0',
+      annual: '#36A2EB',
     };
     return colorMap[categoryName.toLowerCase()] || '#999999';
   };
@@ -72,37 +89,48 @@ export default function ExpensesScreen() {
       'Are you sure you want to delete this expense?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
+        {
+          text: 'Delete',
           style: 'destructive',
-          onPress: () => deleteExpense(expenseId)
-        }
+          onPress: () => deleteExpense(expenseId),
+        },
       ]
     );
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       <View style={styles.header}>
-        <Title style={[styles.title, { color: theme.colors.onBackground }]}>
+        <Text
+          variant="titleLarge"
+          style={[styles.title, { color: theme.colors.onBackground }]}
+        >
           Expenses
-        </Title>
+        </Text>
         <Text style={[styles.totalAmount, { color: theme.colors.primary }]}>
           Total: {formatCurrency(totalExpenses)}
         </Text>
       </View>
 
       {/* Category Filter */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryFilter}>
-        <Chip 
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoryFilter}
+      >
+        <Chip
           selected={selectedCategory === 'all'}
           onPress={() => setSelectedCategory('all')}
           style={styles.filterChip}
-          icon={() => <Filter size={16} color={theme.colors.onSurfaceVariant} />}
+          icon={() => (
+            <Filter size={16} color={theme.colors.onSurfaceVariant} />
+          )}
         >
           All
         </Chip>
-        {categories.map(category => (
+        {categories.map((category) => (
           <Chip
             key={category.id}
             selected={selectedCategory === category.id}
@@ -119,29 +147,58 @@ export default function ExpensesScreen() {
       </ScrollView>
 
       {/* Expenses List */}
-      <ScrollView style={styles.expensesList} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.expensesList}
+        showsVerticalScrollIndicator={false}
+      >
         {filteredExpenses.map((expense, index) => {
           const IconComponent = getCategoryIcon(expense.category);
           return (
-            <Card key={expense.id} style={[styles.expenseCard, { backgroundColor: theme.colors.surface }]}>
+            <Card
+              key={expense.id}
+              style={[
+                styles.expenseCard,
+                { backgroundColor: theme.colors.surface },
+              ]}
+            >
               <Card.Content>
                 <View style={styles.expenseItem}>
                   <View style={styles.expenseIcon}>
-                    <IconComponent size={24} color={getCategoryColor(expense.category)} />
+                    <IconComponent
+                      size={24}
+                      color={getCategoryColor(expense.category)}
+                    />
                   </View>
                   <View style={styles.expenseDetails}>
-                    <Text style={[styles.expenseDescription, { color: theme.colors.onSurface }]}>
+                    <Text
+                      style={[
+                        styles.expenseDescription,
+                        { color: theme.colors.onSurface },
+                      ]}
+                    >
                       {expense.description}
                     </Text>
-                    <Text style={[styles.expenseInfo, { color: theme.colors.onSurfaceVariant }]}>
+                    <Text
+                      style={[
+                        styles.expenseInfo,
+                        { color: theme.colors.onSurfaceVariant },
+                      ]}
+                    >
                       {expense.category} • {expense.subcategory}
                     </Text>
-                    <Text style={[styles.expenseDate, { color: theme.colors.onSurfaceVariant }]}>
+                    <Text
+                      style={[
+                        styles.expenseDate,
+                        { color: theme.colors.onSurfaceVariant },
+                      ]}
+                    >
                       {expense.date} • {expense.family_member}
                     </Text>
                   </View>
                   <View style={styles.expenseAmount}>
-                    <Text style={[styles.amount, { color: theme.colors.error }]}>
+                    <Text
+                      style={[styles.amount, { color: theme.colors.error }]}
+                    >
                       -{formatCurrency(expense.amount)}
                     </Text>
                     <IconButton
@@ -167,6 +224,8 @@ export default function ExpensesScreen() {
       <AddExpenseModal
         visible={showAddModal}
         onDismiss={() => setShowAddModal(false)}
+        categories={categories}
+        addExpense={addExpense}
       />
     </SafeAreaView>
   );
@@ -192,6 +251,9 @@ const styles = StyleSheet.create({
   categoryFilter: {
     paddingHorizontal: 16,
     paddingVertical: 8,
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 'auto',
   },
   filterChip: {
     marginRight: 8,
