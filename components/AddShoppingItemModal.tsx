@@ -36,7 +36,7 @@ export default function AddShoppingItemModal({ visible, onDismiss, onAddItem, ca
 
     const item = {
       name,
-      estimatedCost: parseFloat(estimatedCost)
+      estimated_cost: parseFloat(estimatedCost)
     };
 
     onAddItem(item);
