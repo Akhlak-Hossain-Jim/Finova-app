@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -17,29 +17,30 @@ export interface ShoppingList {
   name: string;
   is_completed: boolean;
   created_at: string;
-  items?: ShoppingItem[];
+  shopping_items?: ShoppingItem[];
 }
 
 export function useShoppingLists() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [lists, setLists] = useState<ShoppingList[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchLists();
+  const fetchLists = useCallback(async () => {
+    if (!user || !user.id) {
+      setLoading(false);
+      setLists([]);
+      return;
     }
-  }, [user]);
-
-  const fetchLists = async () => {
     try {
       const { data, error } = await supabase
         .from('shopping_lists')
-        .select(`
+        .select(
+          `
           *,
           shopping_items (*)
-        `)
-        .eq('user_id', user?.id)
+        `
+        )
+        .eq('user_id', user.id) // Use user.id directly
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -49,12 +50,18 @@ export function useShoppingLists() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, setLists, setLoading]); // Dependencies for useCallback
 
-  const addList = async (listData: {
-    category: string;
-    name: string;
-  }) => {
+  useEffect(() => {
+    if (!authLoading && user?.id) {
+      fetchLists();
+    } else if (!authLoading && !user?.id) {
+      setLoading(false); // If auth is done and no user, stop loading and clear lists
+      setLists([]);
+    }
+  }, [user, authLoading, fetchLists]);
+
+  const addList = async (listData: { category: string; name: string }) => {
     try {
       const { data, error } = await supabase
         .from('shopping_lists')
@@ -62,25 +69,28 @@ export function useShoppingLists() {
           {
             ...listData,
             user_id: user?.id,
-          }
+          },
         ])
         .select()
         .single();
 
       if (error) throw error;
 
-      setLists(prev => [{ ...data, items: [] }, ...prev]);
-      return { success: true };
+      setLists((prev) => [{ ...data, shopping_items: [] }, ...prev]);
+      return { success: true, data };
     } catch (error) {
       console.error('Error adding shopping list:', error);
       return { success: false, error };
     }
   };
 
-  const addItem = async (listId: string, itemData: {
-    name: string;
-    estimated_cost: number;
-  }) => {
+  const addItem = async (
+    listId: string,
+    itemData: {
+      name: string;
+      estimated_cost: number;
+    }
+  ) => {
     try {
       const { data, error } = await supabase
         .from('shopping_items')
@@ -88,18 +98,24 @@ export function useShoppingLists() {
           {
             ...itemData,
             list_id: listId,
-          }
+          },
         ])
         .select()
         .single();
 
       if (error) throw error;
+      console.log('Added shopping item data:', data);
 
-      setLists(prev => prev.map(list => 
-        list.id === listId 
-          ? { ...list, items: [...(list.items || []), data] }
-          : list
-      ));
+      setLists((prev) =>
+        prev.map((list) =>
+          list.id === listId
+            ? {
+                ...list,
+                shopping_items: [...(list.shopping_items || []), data],
+              }
+            : list
+        )
+      );
       return { success: true };
     } catch (error) {
       console.error('Error adding shopping item:', error);
@@ -110,12 +126,14 @@ export function useShoppingLists() {
   const toggleItem = async (itemId: string) => {
     try {
       // Find the item first
-      const item = lists.flatMap(list => list.items || []).find(item => item.id === itemId);
+      const item = lists
+        .flatMap((list) => list.shopping_items || [])
+        .find((item) => item.id === itemId);
       if (!item) return { success: false };
 
       const updates = {
         is_purchased: !item.is_purchased,
-        actual_cost: !item.is_purchased ? item.estimated_cost : null
+        actual_cost: !item.is_purchased ? item.estimated_cost : null,
       };
 
       const { data, error } = await supabase
@@ -127,12 +145,14 @@ export function useShoppingLists() {
 
       if (error) throw error;
 
-      setLists(prev => prev.map(list => ({
-        ...list,
-        items: list.items?.map(item => 
-          item.id === itemId ? data : item
-        )
-      })));
+      setLists((prev) =>
+        prev.map((list) => ({
+          ...list,
+          shopping_items: list.shopping_items?.map((item) =>
+            item.id === itemId ? data : item
+          ),
+        }))
+      );
       return { success: true };
     } catch (error) {
       console.error('Error toggling shopping item:', error);
@@ -149,10 +169,14 @@ export function useShoppingLists() {
 
       if (error) throw error;
 
-      setLists(prev => prev.map(list => ({
-        ...list,
-        items: list.items?.filter(item => item.id !== itemId)
-      })));
+      setLists((prev) =>
+        prev.map((list) => ({
+          ...list,
+          shopping_items: list.shopping_items?.filter(
+            (item) => item.id !== itemId
+          ),
+        }))
+      );
       return { success: true };
     } catch (error) {
       console.error('Error deleting shopping item:', error);
@@ -169,7 +193,7 @@ export function useShoppingLists() {
 
       if (error) throw error;
 
-      setLists(prev => prev.filter(list => list.id !== listId));
+      setLists((prev) => prev.filter((list) => list.id !== listId));
       return { success: true };
     } catch (error) {
       console.error('Error deleting shopping list:', error);
