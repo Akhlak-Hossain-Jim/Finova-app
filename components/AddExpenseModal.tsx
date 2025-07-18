@@ -12,17 +12,34 @@ import {
   Chip,
   SegmentedButtons
 } from 'react-native-paper';
-import { X, DollarSign } from 'lucide-react-native';
-import { useExpenses } from '@/hooks/useExpenses';
+import { X, DollarSign, Home, ShoppingBag, Car, Heart, CreditCard, Users, Gift, Calendar } from 'lucide-react-native';
+import { useExpensesContext } from '@/contexts/ExpensesContext';
 
 interface AddExpenseModalProps {
   visible: boolean;
   onDismiss: () => void;
+  categories: any[];
+  addExpense: (expenseData: any) => Promise<{ success: boolean; error?: any }>;
 }
+
+const getCategoryIcon = (categoryName: string) => {
+  const iconMap: { [key: string]: any } = {
+    'housing': Home,
+    'food': ShoppingBag,
+    'shopping': ShoppingBag,
+    'health': Heart,
+    'transport': Car,
+    'financial': CreditCard,
+    'family': Users,
+    'charity': Gift,
+    'annual': Calendar
+  };
+  return iconMap[categoryName.toLowerCase()] || ShoppingBag;
+};
 
 export default function AddExpenseModal({ visible, onDismiss }: AddExpenseModalProps) {
   const theme = useTheme();
-  const { categories, addExpense } = useExpenses();
+  const { categories, addExpense } = useExpensesContext();
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -66,7 +83,8 @@ export default function AddExpenseModal({ visible, onDismiss }: AddExpenseModalP
     });
   };
 
-  const selectedCategoryData = categories.find(cat => cat.id === selectedCategory);
+  const safeCategories = categories || [];
+  const selectedCategoryData = safeCategories.find(cat => cat.id === selectedCategory);
 
   return (
     <Portal>
@@ -117,7 +135,7 @@ export default function AddExpenseModal({ visible, onDismiss }: AddExpenseModalP
                 Category
               </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-                {categories.map(category => (
+                {safeCategories.map(category => (
                   <Chip
                     key={category.id}
                     selected={selectedCategory === category.id}
@@ -126,7 +144,10 @@ export default function AddExpenseModal({ visible, onDismiss }: AddExpenseModalP
                       setSelectedSubcategory('');
                     }}
                     style={styles.categoryChip}
-                    icon={() => <category.icon size={16} color={category.color} />}
+                    icon={() => {
+                      const IconComponent = getCategoryIcon(category.name);
+                      return <IconComponent size={16} color={category.color} />;
+                    }}
                   >
                     {category.name}
                   </Chip>
@@ -140,7 +161,7 @@ export default function AddExpenseModal({ visible, onDismiss }: AddExpenseModalP
                     Subcategory
                   </Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.subcategoryScroll}>
-                    {selectedCategoryData.subcategories.map((subcategory: string) => (
+                    {(selectedCategoryData.subcategories || []).map((subcategory: string) => (
                       <Chip
                         key={subcategory}
                         selected={selectedSubcategory === subcategory}
