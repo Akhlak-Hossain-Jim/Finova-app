@@ -48,6 +48,11 @@ export default function SignUpScreen() {
     if (error) {
       Alert.alert('Sign Up Error', error.message);
     } else {
+      // Send verification email immediately after successful signup
+      const { error: sendError } = await sendVerificationEmail();
+      if (sendError) {
+        Alert.alert('Verification Email Error', sendError.message);
+      }
       Alert.alert(
         'Success', 
         'Account created successfully! Please check your email to verify your account.',
@@ -58,7 +63,7 @@ export default function SignUpScreen() {
       setEmail('');
       setPassword('');
       setConfirmPassword('');
-      router.replace('/(tabs)');
+      router.replace('/(auth)/signin'); // Redirect to sign-in after signup
     }
   };
 
