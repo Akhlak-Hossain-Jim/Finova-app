@@ -1,24 +1,9 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, Dimensions } from 'react-native';
-import {
-  Surface,
-  Card,
-  Button,
-  useTheme,
-  Text,
-  Divider,
-  Chip,
-  SegmentedButtons,
-} from 'react-native-paper';
+import { Card, useTheme, Text, SegmentedButtons } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { PieChart, BarChart } from 'react-native-gifted-charts';
 import {
-  LineChart,
-  PieChart,
-  BarChart,
-  ProgressChart,
-} from 'react-native-chart-kit';
-import {
-  Calendar,
   TrendingUp,
   TrendingDown,
   Target,
@@ -27,31 +12,19 @@ import {
 import { useExpensesContext } from '@/contexts/ExpensesContext';
 import { useIncomeContext } from '@/contexts/IncomeContext';
 import { useSavingsGoalsContext } from '@/contexts/SavingsGoalsContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { formatCurrency } from '@/consts/currencySymbols';
+
 
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function AnalyticsScreen() {
   const theme = useTheme();
+  const { user } = useAuth();
   const { expenses, loading: expensesLoading } = useExpensesContext();
   const { income, loading: incomeLoading } = useIncomeContext();
   const { goals, loading: goalsLoading } = useSavingsGoalsContext();
   const [selectedPeriod, setSelectedPeriod] = useState('monthly');
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
-  const chartConfig = {
-    backgroundGradientFrom: theme.colors.surface,
-    backgroundGradientTo: theme.colors.surface,
-    color: (opacity = 1) => `rgba(25, 118, 210, ${opacity})`,
-    strokeWidth: 2,
-    barPercentage: 0.5,
-    useShadowColorFromDataset: false,
-  };
 
   const hasData = expenses.length > 0 || income.length > 0 || goals.length > 0;
   const loading = expensesLoading || incomeLoading || goalsLoading;
@@ -148,24 +121,22 @@ export default function AnalyticsScreen() {
       return acc;
     }, {} as Record<string, number>);
 
-  const expenseData = Object.entries(expensesByCategory).map(
+  const expensePieData = Object.entries(expensesByCategory).map(
     ([category, amount], index) => ({
-      name: category,
-      amount,
-      color: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'][
+      value: amount,
+      text: category,
+      color: ['#FF6384', '#36A2EB', '#ff6a00', '#4BC0C0', '#9966FF', '#ff6a00'][
         index % 6
       ],
-      legendFontColor: '#7F7F7F',
     })
   );
 
   // Savings goals progress
-  const savingsData = {
-    labels: goals.slice(0, 4).map((goal) => goal.title.substring(0, 8)),
-    data: goals
-      .slice(0, 4)
-      .map((goal) => Math.min(goal.current_amount / goal.target_amount, 1)),
-  };
+  const savingsProgressData = goals.slice(0, 4).map(goal => ({
+      value: (goal.current_amount / goal.target_amount) * 100,
+      label: goal.title.substring(0, 8),
+      frontColor: theme.colors.primary,
+  }));
 
   return (
     <SafeAreaView
@@ -215,7 +186,7 @@ export default function AnalyticsScreen() {
                     { color: theme.colors.onSurface },
                   ]}
                 >
-                  {formatCurrency(monthlyIncome)}
+                  {formatCurrency(monthlyIncome, user)}
                 </Text>
                 <Text
                   style={[
@@ -241,7 +212,7 @@ export default function AnalyticsScreen() {
                     { color: theme.colors.onSurface },
                   ]}
                 >
-                  {formatCurrency(monthlyExpenses)}
+                  {formatCurrency(monthlyExpenses, user)}
                 </Text>
                 <Text
                   style={[
@@ -267,7 +238,7 @@ export default function AnalyticsScreen() {
                     { color: theme.colors.onSurface },
                   ]}
                 >
-                  {formatCurrency(monthlySavings)}
+                  {formatCurrency(monthlySavings, user)}
                 </Text>
                 <Text
                   style={[
@@ -309,7 +280,7 @@ export default function AnalyticsScreen() {
         </Card>
 
         {/* Expense Breakdown */}
-        {expenseData.length > 0 && (
+        {expensePieData.length > 0 && (
           <Card
             style={[styles.card, { backgroundColor: theme.colors.surface }]}
           >
@@ -320,16 +291,18 @@ export default function AnalyticsScreen() {
               >
                 Expense Breakdown
               </Text>
-              <PieChart
-                data={expenseData}
-                width={screenWidth - 60}
-                height={220}
-                chartConfig={chartConfig}
-                accessor="amount"
-                backgroundColor="transparent"
-                paddingLeft="15"
-                center={[10, 10]}
-              />
+              <View style={{alignItems: 'center'}}>
+                <PieChart
+                    data={expensePieData}
+                    donut
+                    showText
+                    textColor="black"
+                    radius={(screenWidth - 120) / 2}
+                    textSize={12}
+                    textBackgroundColor="white"
+                    textBackgroundRadius={12}
+                />
+              </View>
             </Card.Content>
           </Card>
         )}
@@ -346,15 +319,20 @@ export default function AnalyticsScreen() {
               >
                 Savings Goals Progress
               </Text>
-              <ProgressChart
-                data={savingsData}
-                width={screenWidth - 60}
-                height={220}
-                strokeWidth={16}
-                radius={32}
-                chartConfig={chartConfig}
-                hideLegend={false}
-              />
+              <View style={{alignItems: 'center', paddingLeft: 20}}>
+                <BarChart
+                    data={savingsProgressData}
+                    width={screenWidth - 120}
+                    height={220}
+                    barWidth={22}
+                    maxValue={100}
+                    yAxisLabelSuffix="%"
+                    noOfSections={4}
+                    yAxisTextStyle={{color: theme.colors.onSurfaceVariant}}
+                    xAxisLabelTextStyle={{color: theme.colors.onSurfaceVariant, width: 50, marginLeft: 10}}
+                    yAxisLabelContainerStyle={{width: 50}}
+                />
+              </View>
             </Card.Content>
           </Card>
         )}
@@ -503,7 +481,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   card: {
-    margin: 16,
+    marginHorizontal: 16,
+    marginVertical: 8,
     elevation: 2,
   },
   cardTitle: {
