@@ -1,15 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, Dimensions } from 'react-native';
-import {
-  Surface,
-  Card,
-  Button,
-  FAB,
-  useTheme,
-  Text,
-  Divider,
-} from 'react-native-paper';
-import { LineChart, PieChart } from 'react-native-chart-kit';
+import { Card, Button, FAB, useTheme, Text, Divider } from 'react-native-paper';
+import { PieChart } from 'react-native-gifted-charts';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Plus,
@@ -22,6 +14,10 @@ import { useExpensesContext } from '@/contexts/ExpensesContext';
 import { useIncome } from '@/hooks/useIncome';
 import { useSavingsGoals } from '@/hooks/useSavingsGoals';
 import AddIncomeModal from '@/components/AddIncomeModal';
+import { useAuth } from '@/contexts/AuthContext';
+import VerificationOverlay from '@/components/VerificationOverlay';
+import { router } from 'expo-router';
+import { getCurrencySymbol } from '@/consts/currencySymbols';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -29,14 +25,17 @@ export default function HomeScreen() {
   const theme = useTheme();
   const { expenses, loading: expensesLoading } = useExpensesContext();
   const { income, loading: incomeLoading } = useIncome();
-  const { goals, loading: goalsLoading } = useSavingsGoals();
+  const { loading: goalsLoading } = useSavingsGoals();
+  const { user, sendVerificationEmail, resendEmailDisabled } = useAuth();
   const [showAddIncomeModal, setShowAddIncomeModal] = useState(false);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+    const userCurrency = user?.user_metadata?.currency || 'USD';
+    const symbol = getCurrencySymbol(userCurrency);
+    return `${symbol}${new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount)}`;
   };
 
   // Calculate current month data
@@ -81,14 +80,13 @@ export default function HomeScreen() {
       return acc;
     }, {} as Record<string, number>);
 
-  const expenseData = Object.entries(expensesByCategory).map(
+  const expensePieData = Object.entries(expensesByCategory).map(
     ([category, amount], index) => ({
-      name: category,
-      amount,
-      color: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'][
+      value: amount,
+      text: category,
+      color: ['#FF6384', '#36A2EB', '#ff6a00', '#4BC0C0', '#9966FF', '#FF9F40'][
         index % 6
       ],
-      legendFontColor: '#7F7F7F',
     })
   );
 
@@ -111,15 +109,6 @@ export default function HomeScreen() {
   ]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 4);
-
-  const chartConfig = {
-    backgroundGradientFrom: theme.colors.surface,
-    backgroundGradientTo: theme.colors.surface,
-    color: (opacity = 1) => `rgba(25, 118, 210, ${opacity})`,
-    strokeWidth: 2,
-    barPercentage: 0.5,
-    useShadowColorFromDataset: false,
-  };
 
   const hasData = expenses.length > 0 || income.length > 0;
   const loading = expensesLoading || incomeLoading || goalsLoading;
@@ -189,7 +178,7 @@ export default function HomeScreen() {
                 <Button
                   mode="outlined"
                   onPress={() => {
-                    /* Navigate to expenses tab */
+                    router.replace('/expenses');
                   }}
                   style={styles.addButton}
                 >
@@ -330,7 +319,7 @@ export default function HomeScreen() {
             </View>
 
             {/* Expense Breakdown Chart */}
-            {expenseData.length > 0 && (
+            {expensePieData.length > 0 && (
               <Card
                 style={[
                   styles.chartCard,
@@ -347,16 +336,18 @@ export default function HomeScreen() {
                   >
                     Expense Breakdown
                   </Text>
-                  <PieChart
-                    data={expenseData}
-                    width={screenWidth - 60}
-                    height={220}
-                    chartConfig={chartConfig}
-                    accessor="amount"
-                    backgroundColor="transparent"
-                    paddingLeft="15"
-                    center={[10, 10]}
-                  />
+                  <View style={{ alignItems: 'center' }}>
+                    <PieChart
+                      data={expensePieData}
+                      donut
+                      showText
+                      textColor="black"
+                      radius={(screenWidth - 120) / 2}
+                      textSize={12}
+                      textBackgroundColor="white"
+                      textBackgroundRadius={12}
+                    />
+                  </View>
                 </Card.Content>
               </Card>
             )}
@@ -436,6 +427,12 @@ export default function HomeScreen() {
       <AddIncomeModal
         visible={showAddIncomeModal}
         onDismiss={() => setShowAddIncomeModal(false)}
+      />
+
+      <VerificationOverlay
+        isVerified={user?.email_confirmed_at ? true : false}
+        onResendEmail={sendVerificationEmail}
+        resendDisabled={resendEmailDisabled}
       />
     </SafeAreaView>
   );
