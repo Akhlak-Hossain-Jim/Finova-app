@@ -1,20 +1,17 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import {
-  Surface,
   Card,
-  Button,
   FAB,
   useTheme,
   Text,
-  Divider,
   Chip,
   IconButton,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Plus,
-  Chrome as Home,
+  Home,
   ShoppingBag,
   Car,
   Heart,
@@ -26,11 +23,15 @@ import {
 } from 'lucide-react-native';
 import AddExpenseModal from '@/components/AddExpenseModal';
 import { useExpensesContext } from '@/contexts/ExpensesContext';
+import { useAuth } from '@/contexts/AuthContext';
+import VerificationOverlay from '@/components/VerificationOverlay';
+import { getCurrencySymbol } from '@/consts/currencySymbols';
 
 export default function ExpensesScreen() {
   const theme = useTheme();
-  const { expenses, categories, loading, addExpense, deleteExpense } =
+  const { expenses, categories, addExpense, deleteExpense } =
     useExpensesContext();
+  const { user, sendVerificationEmail, resendEmailDisabled } = useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -47,10 +48,12 @@ export default function ExpensesScreen() {
   );
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+    const userCurrency = user?.user_metadata?.currency || 'USD';
+    const symbol = getCurrencySymbol(userCurrency);
+    return `${symbol}${new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount)}`;
   };
 
   const getCategoryIcon = (categoryName: string) => {
@@ -72,7 +75,7 @@ export default function ExpensesScreen() {
     const colorMap: { [key: string]: string } = {
       housing: '#FF6384',
       food: '#36A2EB',
-      shopping: '#FFCE56',
+      shopping: '#ff6a00',
       health: '#4BC0C0',
       transport: '#9966FF',
       financial: '#FF9F40',
@@ -226,6 +229,12 @@ export default function ExpensesScreen() {
         onDismiss={() => setShowAddModal(false)}
         categories={categories}
         addExpense={addExpense}
+      />
+
+      <VerificationOverlay
+        isVerified={user?.email_confirmed_at ? true : false}
+        onResendEmail={sendVerificationEmail}
+        resendDisabled={resendEmailDisabled}
       />
     </SafeAreaView>
   );
