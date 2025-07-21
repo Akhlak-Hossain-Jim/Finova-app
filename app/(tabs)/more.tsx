@@ -1,13 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import { useThemeContext } from '@/contexts/ThemeContext';
 import {
-  View,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  useColorScheme,
-} from 'react-native';
-import {
-  Surface,
   Card,
   Button,
   useTheme,
@@ -16,14 +10,9 @@ import {
   List,
   Switch,
   Avatar,
-  TextInput,
-  Modal,
-  Portal,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  User,
-  Settings,
   Target,
   Activity,
   Users,
@@ -32,35 +21,43 @@ import {
   CircleHelp as HelpCircle,
   LogOut,
   Moon,
-  Sun,
-  DollarSign,
-  X,
 } from 'lucide-react-native';
 import SavingsGoalsModal from '@/components/SavingsGoalsModal';
 import HabitsModal from '@/components/HabitsModal';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIncome } from '@/hooks/useIncome';
+import { useSavingsGoals } from '@/hooks/useSavingsGoals';
+
+import { useRouter } from 'expo-router';
+
+import { getCurrencySymbol } from '@/consts/currencySymbols';
 
 export default function MoreScreen() {
+  const router = useRouter();
   const theme = useTheme();
-  const colorScheme = useColorScheme();
+  const { isDarkMode: idm, toggleTheme } = useThemeContext();
   const { user, signOut } = useAuth();
-  const [isDarkMode, setIsDarkMode] = useState(colorScheme === 'dark');
+  const { income } = useIncome();
+  
+  const { totalSaved, completedGoalsCount, totalGoalsCount } =
+    useSavingsGoals();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showSavingsModal, setShowSavingsModal] = useState(false);
   const [showHabitsModal, setShowHabitsModal] = useState(false);
-  const [showEditProfile, setShowEditProfile] = useState(false);
 
   const [userProfile, setUserProfile] = useState({
     name: user?.user_metadata?.full_name || 'User',
     email: user?.email || '',
-    currency: 'USD',
-    monthlyIncome: 5000,
+    currency: user?.user_metadata?.currency || 'USD',
   });
 
-  const [editForm, setEditForm] = useState({
-    name: userProfile.name,
-    monthlyIncome: userProfile.monthlyIncome.toString(),
-  });
+  useEffect(() => {
+    setUserProfile({
+      name: user?.user_metadata?.full_name || 'User',
+      email: user?.email || '',
+      currency: user?.user_metadata?.currency || 'USD',
+    });
+  }, [user]);
 
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -71,15 +68,6 @@ export default function MoreScreen() {
         onPress: signOut,
       },
     ]);
-  };
-
-  const handleSaveProfile = () => {
-    setUserProfile((prev) => ({
-      ...prev,
-      name: editForm.name,
-      monthlyIncome: parseFloat(editForm.monthlyIncome) || 0,
-    }));
-    setShowEditProfile(false);
   };
 
   const handleFamilyMembers = () => {
@@ -139,6 +127,57 @@ export default function MoreScreen() {
     },
   ];
 
+  const formatCurrency = (amount: number) => {
+    const userCurrency = user?.user_metadata?.currency || 'USD';
+    const symbol = getCurrencySymbol(userCurrency);
+    return `${symbol}${new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount)}`;
+  };
+
+  const currentYear = new Date().getFullYear();
+
+  const monthlyIncome = income
+    .filter((item) => {
+      const itemDate = new Date(item.date);
+      return (
+        itemDate.getMonth() === new Date().getMonth() &&
+        itemDate.getFullYear() === currentYear
+      );
+    })
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  const YearlyIncome = income
+    .filter((item) => {
+      const itemDate = new Date(item.date);
+      return itemDate.getFullYear() === currentYear;
+    })
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  const calculateAverageMonthlyIncome = () => {
+    const incomeByMonth: Record<string, number> = {};
+
+    for (const item of income) {
+      const date = new Date(item.date);
+      const key = `${date.getFullYear()}-${date.getMonth() + 1}`; // e.g., '2025-7'
+
+      if (!incomeByMonth[key]) {
+        incomeByMonth[key] = 0;
+      }
+
+      incomeByMonth[key] += item.amount;
+    }
+
+    const monthlyTotals = Object.values(incomeByMonth);
+    const total = monthlyTotals.reduce((sum, value) => sum + value, 0);
+    const average = monthlyTotals.length > 0 ? total / monthlyTotals.length : 0;
+
+    return average;
+  };
+
+  
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
@@ -149,7 +188,7 @@ export default function MoreScreen() {
             variant="titleLarge"
             style={[styles.title, { color: theme.colors.onBackground }]}
           >
-            More
+            Options
           </Text>
         </View>
 
@@ -194,13 +233,23 @@ export default function MoreScreen() {
                     { color: theme.colors.primary },
                   ]}
                 >
-                  Monthly Income: ${userProfile.monthlyIncome.toLocaleString()}
+                  Avg. Earning(M):{' '}
+                  {formatCurrency(calculateAverageMonthlyIncome())}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.profileIncome,
+                    { color: theme.colors.primary },
+                  ]}
+                >
+                  Earned this Month: {formatCurrency(monthlyIncome)}
                 </Text>
               </View>
             </View>
             <Button
               mode="outlined"
-              onPress={() => setShowEditProfile(true)}
+              onPress={() => router.push('/(auth)/edit-profile')}
               style={styles.editButton}
             >
               Edit Profile
@@ -224,7 +273,7 @@ export default function MoreScreen() {
                 <Text
                   style={[styles.statValue, { color: theme.colors.primary }]}
                 >
-                  $3,200
+                  {formatCurrency(YearlyIncome)}
                 </Text>
                 <Text
                   style={[
@@ -232,14 +281,14 @@ export default function MoreScreen() {
                     { color: theme.colors.onSurfaceVariant },
                   ]}
                 >
-                  This Month
+                  This Year
                 </Text>
               </View>
               <View style={styles.statItem}>
                 <Text
                   style={[styles.statValue, { color: theme.colors.secondary }]}
                 >
-                  $1,800
+                  {formatCurrency(totalSaved)}
                 </Text>
                 <Text
                   style={[
@@ -254,7 +303,7 @@ export default function MoreScreen() {
                 <Text
                   style={[styles.statValue, { color: theme.colors.tertiary }]}
                 >
-                  3/5
+                  {completedGoalsCount}/{totalGoalsCount}
                 </Text>
                 <Text
                   style={[
@@ -295,9 +344,7 @@ export default function MoreScreen() {
                   color={theme.colors.onSurfaceVariant}
                 />
               )}
-              right={() => (
-                <Switch value={isDarkMode} onValueChange={setIsDarkMode} />
-              )}
+              right={() => <Switch value={idm} onValueChange={toggleTheme} />}
             />
 
             <Divider />
@@ -361,87 +408,19 @@ export default function MoreScreen() {
               onPress={handleLogout}
               titleStyle={{ color: theme.colors.error }}
             />
+            <Divider />
+            <List.Item
+              title="Delete Account"
+              description="Permanently delete your account"
+              left={(props) => (
+                <Shield {...props} size={24} color={theme.colors.error} />
+              )}
+              onPress={() => router.push('/(auth)/delete-account')}
+              titleStyle={{ color: theme.colors.error }}
+            />
           </Card.Content>
         </Card>
       </ScrollView>
-
-      {/* Edit Profile Modal */}
-      <Portal>
-        <Modal
-          visible={showEditProfile}
-          onDismiss={() => setShowEditProfile(false)}
-          contentContainerStyle={[
-            styles.modal,
-            { backgroundColor: theme.colors.surface },
-          ]}
-        >
-          <Card style={{ backgroundColor: theme.colors.surface }}>
-            <Card.Content>
-              <View style={styles.modalHeader}>
-                <Text
-                  variant="titleLarge"
-                  style={[styles.modalTitle, { color: theme.colors.onSurface }]}
-                >
-                  Edit Profile
-                </Text>
-                <Button
-                  mode="text"
-                  onPress={() => setShowEditProfile(false)}
-                  icon={() => <X size={20} color={theme.colors.onSurface} />}
-                >
-                  Close
-                </Button>
-              </View>
-
-              <TextInput
-                label="Full Name"
-                value={editForm.name}
-                onChangeText={(text) =>
-                  setEditForm((prev) => ({ ...prev, name: text }))
-                }
-                mode="outlined"
-                style={styles.input}
-                left={
-                  <TextInput.Icon
-                    icon={() => (
-                      <User size={20} color={theme.colors.onSurfaceVariant} />
-                    )}
-                  />
-                }
-              />
-
-              <TextInput
-                label="Monthly Income"
-                value={editForm.monthlyIncome}
-                onChangeText={(text) =>
-                  setEditForm((prev) => ({ ...prev, monthlyIncome: text }))
-                }
-                keyboardType="numeric"
-                mode="outlined"
-                style={styles.input}
-                left={
-                  <TextInput.Icon
-                    icon={() => (
-                      <DollarSign
-                        size={20}
-                        color={theme.colors.onSurfaceVariant}
-                      />
-                    )}
-                  />
-                }
-              />
-
-              <Button
-                mode="contained"
-                onPress={handleSaveProfile}
-                style={styles.saveButton}
-              >
-                Save Changes
-              </Button>
-            </Card.Content>
-          </Card>
-        </Modal>
-      </Portal>
 
       <SavingsGoalsModal
         visible={showSavingsModal}
@@ -530,25 +509,5 @@ const styles = StyleSheet.create({
     margin: 16,
     marginBottom: 32,
     elevation: 2,
-  },
-  modal: {
-    margin: 20,
-    borderRadius: 8,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  input: {
-    marginBottom: 16,
-  },
-  saveButton: {
-    marginTop: 10,
   },
 });
