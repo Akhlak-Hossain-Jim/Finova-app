@@ -1,21 +1,26 @@
-import { Tabs } from 'expo-router';
-import { useRouter } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { useTheme } from 'react-native-paper';
-import { Chrome as Home, DollarSign, ShoppingCart, TrendingUp, Settings } from 'lucide-react-native';
+import {
+  Home,
+  DollarSign,
+  ShoppingCart,
+  TrendingUp,
+  Settings,
+} from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEffect } from "react"
+import { useEffect } from 'react';
 
 export default function TabLayout() {
   const theme = useTheme();
   const router = useRouter();
-  const { session,loading } = useAuth();
+  const { session, loading } = useAuth();
 
   useEffect(() => {
     if (loading) return;
     if (session) {
-      console.log("user is here")
-    }else {
-      router.replace("/(auth)/signin");
+      return;
+    } else {
+      router.replace('/(auth)/signin');
     }
   }, [session, loading, router]);
 
@@ -29,14 +34,13 @@ export default function TabLayout() {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.outline,
         },
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ size, color }) => (
-            <Home size={size} color={color} />
-          ),
+          tabBarIcon: ({ size, color }) => <Home size={size} color={color} />,
         }}
       />
       <Tabs.Screen
