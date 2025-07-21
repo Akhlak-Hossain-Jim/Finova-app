@@ -104,7 +104,7 @@ export default function SignInScreen() {
 
               <View style={styles.signUpContainer}>
                 <Text style={[styles.signUpText, { color: theme.colors.onSurfaceVariant }]}>
-                  Don't have an account?{' '}
+                  Don&apos;t have an account?{' '}
                 </Text>
                 <Link href="/(auth)/signup" asChild>
                   <Button mode="text" compact>
