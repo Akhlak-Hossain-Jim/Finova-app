@@ -11,21 +11,21 @@ import {
   Calendar,
 } from 'lucide-react-native';
 import { useExpensesContext } from '@/contexts/ExpensesContext';
-import { useIncome } from '@/hooks/useIncome';
-import { useSavingsGoals } from '@/hooks/useSavingsGoals';
 import AddIncomeModal from '@/components/AddIncomeModal';
 import { useAuth } from '@/contexts/AuthContext';
 import VerificationOverlay from '@/components/VerificationOverlay';
 import { router } from 'expo-router';
 import { getCurrencySymbol } from '@/consts/currencySymbols';
+import { useIncomeContext } from '@/contexts/IncomeContext';
+import { useSavingsGoalsContext } from '@/contexts/SavingsGoalsContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const theme = useTheme();
   const { expenses, loading: expensesLoading } = useExpensesContext();
-  const { income, loading: incomeLoading } = useIncome();
-  const { loading: goalsLoading } = useSavingsGoals();
+  const { income, loading: incomeLoading } = useIncomeContext();
+  const { loading: goalsLoading } = useSavingsGoalsContext();
   const { user, sendVerificationEmail, resendEmailDisabled } = useAuth();
   const [showAddIncomeModal, setShowAddIncomeModal] = useState(false);
 
