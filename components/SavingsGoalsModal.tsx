@@ -4,7 +4,6 @@ import {
   Modal,
   Portal,
   Card,
-  Title,
   Button,
   TextInput,
   useTheme,
@@ -13,7 +12,9 @@ import {
   FAB,
 } from 'react-native-paper';
 import { X, Target, Plus, Calendar, DollarSign } from 'lucide-react-native';
-import { useSavingsGoals } from '@/hooks/useSavingsGoals';
+import { formatCurrency } from '@/consts/currencySymbols';
+import { useSavingsGoalsContext } from '@/contexts/SavingsGoalsContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SavingsGoalsModalProps {
   visible: boolean;
@@ -25,18 +26,12 @@ export default function SavingsGoalsModal({
   onDismiss,
 }: SavingsGoalsModalProps) {
   const theme = useTheme();
-  const { goals, addGoal, loading } = useSavingsGoals();
+  const { goals, addGoal } = useSavingsGoalsContext();
+  const { profile } = useAuth();
   const [showAddGoal, setShowAddGoal] = useState(false);
   const [goalTitle, setGoalTitle] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [targetDate, setTargetDate] = useState('');
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
 
   const getProgress = (current: number, target: number) => {
     return Math.min(current / target, 1);
@@ -135,8 +130,8 @@ export default function SavingsGoalsModal({
                             { color: theme.colors.primary },
                           ]}
                         >
-                          {formatCurrency(goal.current_amount)} /{' '}
-                          {formatCurrency(goal.target_amount)}
+                          {formatCurrency(goal.current_amount, profile)} /{' '}
+                          {formatCurrency(goal.target_amount, profile)}
                         </Text>
                       </View>
 
@@ -344,6 +339,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     alignItems: 'center',
+    marginHorizontal: 'auto',
     elevation: 6,
   },
 });
