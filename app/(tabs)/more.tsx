@@ -16,7 +16,7 @@ import {
   Target,
   Activity,
   Users,
-  Bell,
+  // Bell,
   Shield,
   CircleHelp as HelpCircle,
   LogOut,
@@ -25,39 +25,39 @@ import {
 import SavingsGoalsModal from '@/components/SavingsGoalsModal';
 import HabitsModal from '@/components/HabitsModal';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIncome } from '@/hooks/useIncome';
 import { useSavingsGoals } from '@/hooks/useSavingsGoals';
 
 import { useRouter } from 'expo-router';
 
-import { getCurrencySymbol } from '@/consts/currencySymbols';
+import { formatCurrency } from '@/consts/currencySymbols';
+import { useIncomeContext } from '@/contexts/IncomeContext';
 
 export default function MoreScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { isDarkMode: idm, toggleTheme } = useThemeContext();
-  const { user, signOut } = useAuth();
-  const { income } = useIncome();
-  
+  const { user, signOut, profile } = useAuth();
+  const { income } = useIncomeContext();
+
   const { totalSaved, completedGoalsCount, totalGoalsCount } =
     useSavingsGoals();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  // const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showSavingsModal, setShowSavingsModal] = useState(false);
   const [showHabitsModal, setShowHabitsModal] = useState(false);
 
   const [userProfile, setUserProfile] = useState({
     name: user?.user_metadata?.full_name || 'User',
     email: user?.email || '',
-    currency: user?.user_metadata?.currency || 'USD',
+    currency: profile?.currency || 'USD',
   });
 
   useEffect(() => {
     setUserProfile({
       name: user?.user_metadata?.full_name || 'User',
       email: user?.email || '',
-      currency: user?.user_metadata?.currency || 'USD',
+      currency: profile?.currency || 'USD',
     });
-  }, [user]);
+  }, [user, profile]);
 
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -93,19 +93,35 @@ export default function MoreScreen() {
       [{ text: 'OK' }]
     );
   };
+  const handleSavingGoal = () => {
+    Alert.alert(
+      'Saving Goals',
+      'Adding & Managing goals are in progress. Coming soon!',
+      [{ text: 'OK' }]
+    );
+  };
+  const handleHabit = () => {
+    Alert.alert(
+      'Habit Tracking',
+      'Adding custom habit tracking is on progress of making. Coming soon!',
+      [{ text: 'OK' }]
+    );
+  };
 
   const settingsOptions = [
     {
       title: 'Savings Goals',
       description: 'Manage your financial goals',
       icon: Target,
-      onPress: () => setShowSavingsModal(true),
+      // onPress: () => setShowSavingsModal(true),
+      onPress: () => handleSavingGoal(),
     },
     {
       title: 'Habit Tracking',
       description: 'Track your financial habits',
       icon: Activity,
-      onPress: () => setShowHabitsModal(true),
+      // onPress: () => setShowHabitsModal(true),
+      onPress: () => handleHabit(),
     },
     {
       title: 'Family Members',
@@ -125,16 +141,13 @@ export default function MoreScreen() {
       icon: HelpCircle,
       onPress: handleHelp,
     },
+    {
+      title: 'Privacy Policy',
+      description: 'Learn about our policies',
+      icon: Shield,
+      onPress: () => router.push('/privacy-policy'),
+    },
   ];
-
-  const formatCurrency = (amount: number) => {
-    const userCurrency = user?.user_metadata?.currency || 'USD';
-    const symbol = getCurrencySymbol(userCurrency);
-    return `${symbol}${new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount)}`;
-  };
 
   const currentYear = new Date().getFullYear();
 
@@ -176,8 +189,6 @@ export default function MoreScreen() {
     return average;
   };
 
-  
-
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
@@ -206,6 +217,7 @@ export default function MoreScreen() {
                 label={userProfile.name
                   .split(' ')
                   .map((n: string) => n[0])
+                  .splice(0, 2)
                   .join('')
                   .toUpperCase()}
                 style={{ backgroundColor: theme.colors.primary }}
@@ -234,7 +246,7 @@ export default function MoreScreen() {
                   ]}
                 >
                   Avg. Earning(M):{' '}
-                  {formatCurrency(calculateAverageMonthlyIncome())}
+                  {formatCurrency(calculateAverageMonthlyIncome(), profile)}
                 </Text>
 
                 <Text
@@ -243,13 +255,13 @@ export default function MoreScreen() {
                     { color: theme.colors.primary },
                   ]}
                 >
-                  Earned this Month: {formatCurrency(monthlyIncome)}
+                  Earned this Month: {formatCurrency(monthlyIncome, profile)}
                 </Text>
               </View>
             </View>
             <Button
               mode="outlined"
-              onPress={() => router.push('/(auth)/edit-profile')}
+              onPress={() => router.push('/edit-profile')}
               style={styles.editButton}
             >
               Edit Profile
@@ -273,7 +285,7 @@ export default function MoreScreen() {
                 <Text
                   style={[styles.statValue, { color: theme.colors.primary }]}
                 >
-                  {formatCurrency(YearlyIncome)}
+                  {formatCurrency(YearlyIncome, profile)}
                 </Text>
                 <Text
                   style={[
@@ -288,7 +300,7 @@ export default function MoreScreen() {
                 <Text
                   style={[styles.statValue, { color: theme.colors.secondary }]}
                 >
-                  {formatCurrency(totalSaved)}
+                  {formatCurrency(totalSaved, profile)}
                 </Text>
                 <Text
                   style={[
@@ -350,7 +362,7 @@ export default function MoreScreen() {
             <Divider />
 
             {/* Notifications Toggle */}
-            <List.Item
+            {/* <List.Item
               title="Notifications"
               description="Enable push notifications"
               left={(props) => (
@@ -368,7 +380,7 @@ export default function MoreScreen() {
               )}
             />
 
-            <Divider />
+            <Divider /> */}
 
             {/* Settings Options */}
             {settingsOptions.map((option, index) => (
