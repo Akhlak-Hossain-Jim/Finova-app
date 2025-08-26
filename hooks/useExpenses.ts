@@ -40,29 +40,32 @@ export function useExpenses() {
     try {
       const { data, error } = await supabase
         .from('expenses')
-        .select(`
+        .select(
+          `
           *,
           expense_categories (
             name,
             color,
             icon
           )
-        `)
+        `
+        )
         .eq('user_id', user?.id)
         .order('date', { ascending: false });
 
       if (error) throw error;
 
-      const formattedExpenses = data?.map(expense => ({
-        id: expense.id,
-        amount: expense.amount,
-        description: expense.description,
-        category: expense.expense_categories.name,
-        subcategory: expense.subcategory,
-        date: expense.date,
-        family_member: expense.family_member,
-        created_at: expense.created_at,
-      })) || [];
+      const formattedExpenses =
+        data?.map((expense) => ({
+          id: expense.id,
+          amount: expense.amount,
+          description: expense.description,
+          category: expense.expense_categories.name,
+          subcategory: expense.subcategory,
+          date: expense.date,
+          family_member: expense.family_member,
+          created_at: expense.created_at,
+        })) || [];
 
       if (isMounted) {
         setExpenses(formattedExpenses);
@@ -116,16 +119,18 @@ export function useExpenses() {
           {
             ...expenseData,
             user_id: user?.id,
-          }
+          },
         ])
-        .select(`
+        .select(
+          `
           *,
           expense_categories (
             name,
             color,
             icon
           )
-        `)
+        `
+        )
         .single();
 
       if (error) throw error;
@@ -141,7 +146,7 @@ export function useExpenses() {
         created_at: data.created_at,
       };
 
-      setExpenses(prev => [newExpense, ...prev]);
+      setExpenses((prev) => [newExpense, ...prev]);
       return { success: true };
     } catch (error) {
       console.error('Error adding expense:', error);
@@ -158,7 +163,7 @@ export function useExpenses() {
 
       if (error) throw error;
 
-      setExpenses(prev => prev.filter(expense => expense.id !== expenseId));
+      setExpenses((prev) => prev.filter((expense) => expense.id !== expenseId));
       return { success: true };
     } catch (error) {
       console.error('Error deleting expense:', error);
