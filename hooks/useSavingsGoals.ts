@@ -66,14 +66,14 @@ export function useSavingsGoals() {
           {
             ...goalData,
             user_id: user?.id,
-          }
+          },
         ])
         .select()
         .single();
 
       if (error) throw error;
 
-      setGoals(prev => [data, ...prev]);
+      setGoals((prev) => [data, ...prev]);
       return { success: true };
     } catch (error) {
       console.error('Error adding savings goal:', error);
@@ -92,9 +92,9 @@ export function useSavingsGoals() {
 
       if (error) throw error;
 
-      setGoals(prev => prev.map(goal => 
-        goal.id === goalId ? data : goal
-      ));
+      setGoals((prev) =>
+        prev.map((goal) => (goal.id === goalId ? data : goal))
+      );
       return { success: true };
     } catch (error) {
       console.error('Error updating savings goal:', error);
@@ -111,13 +111,20 @@ export function useSavingsGoals() {
 
       if (error) throw error;
 
-      setGoals(prev => prev.filter(goal => goal.id !== goalId));
+      setGoals((prev) => prev.filter((goal) => goal.id !== goalId));
       return { success: true };
     } catch (error) {
       console.error('Error deleting savings goal:', error);
       return { success: false, error };
     }
   };
+
+  // const totalSaved = goals.reduce((sum, goal) => sum + goal.current_amount, 0);
+  const totalSaved = goals.reduce((sum, goal) => sum + goal.current_amount, 0);
+  const completedGoalsCount = goals.filter(
+    (goal) => goal.current_amount >= goal.target_amount
+  ).length;
+  const totalGoalsCount = goals.length;
 
   return {
     goals,
@@ -126,5 +133,8 @@ export function useSavingsGoals() {
     updateGoal,
     deleteGoal,
     refetch: fetchGoals,
+    totalSaved,
+    completedGoalsCount,
+    totalGoalsCount,
   };
 }
