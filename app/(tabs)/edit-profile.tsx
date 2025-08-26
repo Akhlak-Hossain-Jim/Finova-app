@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Platform } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import {
   Card,
@@ -20,30 +20,49 @@ export default function EditProfileScreen() {
   const theme = useTheme();
   const {
     user,
+    profile,
     sendVerificationEmail,
     resendEmailDisabled,
     updateUserProfile,
+    updateUserProfileDB,
   } = useAuth();
 
   const [userProfile] = useState({
     name: user?.user_metadata?.full_name || 'User',
     email: user?.email || '',
-    currency: 'USD',
+    currency: profile?.currency ?? 'USD',
   });
 
   const [editForm, setEditForm] = useState({
     name: userProfile.name,
     currency: userProfile.currency,
   });
+  const [loading, setLoading] = useState(false);
 
   const handleSaveProfile = async () => {
-    const { error } = await updateUserProfile(editForm.name, editForm.currency);
+    if (
+      editForm.name === userProfile.name &&
+      editForm.currency === userProfile.currency
+    ) {
+      Alert.alert('Warning', 'Your profile is upto date.');
+      return;
+    }
+    setLoading(true);
+
+    const { error } = await updateUserProfileDB(
+      editForm.name,
+      editForm.currency,
+      profile?.monthly_income ?? 0
+    );
+
     if (error) {
       Alert.alert('Error', error.message);
     } else {
       Alert.alert('Success', 'Profile updated successfully!');
-      router.back();
+      updateUserProfile(editForm.name);
+      router.push('/more');
     }
+    setLoading(false);
   };
 
   return (
@@ -56,7 +75,14 @@ export default function EditProfileScreen() {
             icon={() => (
               <ArrowLeft size={24} color={theme.colors.onBackground} />
             )}
-            onPress={() => router.back()}
+            onPress={() => {
+              setEditForm({
+                name: userProfile?.name,
+                currency: userProfile?.currency,
+              });
+              setLoading(false);
+              router.push('/more');
+            }}
             style={styles.backButton}
           />
           <Text
@@ -80,7 +106,7 @@ export default function EditProfileScreen() {
               disabled={
                 user?.email_confirmed_at ? true : false || resendEmailDisabled
               }
-              style={styles.verificationButton}
+              style={[styles.verificationButton]}
               icon={() => (
                 <Mail size={20} color={theme.colors.onSurfaceVariant} />
               )}
@@ -146,6 +172,12 @@ export default function EditProfileScreen() {
               mode="contained"
               onPress={handleSaveProfile}
               style={styles.saveButton}
+              loading={loading}
+              disabled={
+                loading ||
+                (userProfile?.name === editForm?.name &&
+                  userProfile?.name === editForm.currency)
+              }
             >
               Save Changes
             </Button>
@@ -182,15 +214,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   saveButton: {
-    marginTop: 10,
+    marginTop: 8,
   },
   verificationButton: {
     marginTop: 10,
+    marginBottom: 20,
   },
   pickerLabel: {
     fontSize: 16,
     marginBottom: 8,
-    marginTop: 16,
+    marginTop: 0,
   },
   pickerContainer: {
     borderWidth: 1,
@@ -199,7 +232,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   picker: {
-    height: 50,
+    height: Platform.OS === 'ios' ? 190 : 50,
     width: '100%',
     paddingHorizontal: 12,
   },
