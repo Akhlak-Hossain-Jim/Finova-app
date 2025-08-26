@@ -25,36 +25,29 @@ import AddExpenseModal from '@/components/AddExpenseModal';
 import { useExpensesContext } from '@/contexts/ExpensesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import VerificationOverlay from '@/components/VerificationOverlay';
-import { getCurrencySymbol } from '@/consts/currencySymbols';
+import { formatCurrency } from '@/consts/currencySymbols';
 
 export default function ExpensesScreen() {
   const theme = useTheme();
   const { expenses, categories, addExpense, deleteExpense } =
     useExpensesContext();
-  const { user, sendVerificationEmail, resendEmailDisabled } = useAuth();
+  const { user, profile, sendVerificationEmail, resendEmailDisabled } =
+    useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   const filteredExpenses =
     selectedCategory === 'all'
       ? expenses
-      : expenses.filter((expense) =>
-          expense.category.toLowerCase().includes(selectedCategory)
+      : expenses.filter(
+          (expense) =>
+            expense.category.toLowerCase() === selectedCategory.toLowerCase()
         );
 
   const totalExpenses = filteredExpenses.reduce(
     (sum, expense) => sum + expense.amount,
     0
   );
-
-  const formatCurrency = (amount: number) => {
-    const userCurrency = user?.user_metadata?.currency || 'USD';
-    const symbol = getCurrencySymbol(userCurrency);
-    return `${symbol}${new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount)}`;
-  };
 
   const getCategoryIcon = (categoryName: string) => {
     const iconMap: { [key: string]: any } = {
@@ -113,7 +106,7 @@ export default function ExpensesScreen() {
           Expenses
         </Text>
         <Text style={[styles.totalAmount, { color: theme.colors.primary }]}>
-          Total: {formatCurrency(totalExpenses)}
+          Total: {formatCurrency(totalExpenses, profile)}
         </Text>
       </View>
 
@@ -136,8 +129,8 @@ export default function ExpensesScreen() {
         {categories.map((category) => (
           <Chip
             key={category.id}
-            selected={selectedCategory === category.id}
-            onPress={() => setSelectedCategory(category.id)}
+            selected={selectedCategory === category.name}
+            onPress={() => setSelectedCategory(category.name)}
             style={styles.filterChip}
             icon={() => {
               const IconComponent = getCategoryIcon(category.name);
@@ -202,7 +195,7 @@ export default function ExpensesScreen() {
                     <Text
                       style={[styles.amount, { color: theme.colors.error }]}
                     >
-                      -{formatCurrency(expense.amount)}
+                      -{formatCurrency(expense.amount, profile)}
                     </Text>
                     <IconButton
                       icon="delete"
