@@ -7,11 +7,10 @@ import {
   Title, 
   Button, 
   TextInput,
-  useTheme,
-  Text
+  useTheme
 } from 'react-native-paper';
 import { X, DollarSign, Briefcase, Calendar } from 'lucide-react-native';
-import { useIncome } from '@/hooks/useIncome';
+import { useIncomeContext } from '@/contexts/IncomeContext';
 
 interface AddIncomeModalProps {
   visible: boolean;
@@ -20,7 +19,7 @@ interface AddIncomeModalProps {
 
 export default function AddIncomeModal({ visible, onDismiss }: AddIncomeModalProps) {
   const theme = useTheme();
-  const { addIncome } = useIncome();
+  const { addIncome, refetch } = useIncomeContext();
   const [source, setSource] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -45,8 +44,9 @@ export default function AddIncomeModal({ visible, onDismiss }: AddIncomeModalPro
       date
     };
 
-    addIncome(incomeData).then(result => {
+    addIncome(incomeData).then(async (result) => {
       if (result.success) {
+        await refetch();
         resetForm();
         onDismiss();
       }
