@@ -1,50 +1,66 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import {
-  Surface,
   Card,
-  Button,
   FAB,
   useTheme,
   Text,
-  Divider,
   Chip,
   IconButton,
-  List,
-  Checkbox,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Plus,
   ShoppingBag,
-  Chrome as Home,
-  Car,
+  Home,
   Heart,
   Package,
   Utensils,
   Shirt,
+  CheckCircle,
+  Circle,
+  Pencil,
 } from 'lucide-react-native';
 import AddShoppingItemModal from '@/components/AddShoppingItemModal';
+import EditShoppingItemCostModal from '@/components/EditShoppingItemCostModal';
+import AddOptionsModal from '@/components/AddOptionsModal';
+import ImportFromPreviousModal from '@/components/ImportFromPreviousModal';
 import { useShoppingListsContext } from '@/contexts/ShoppingListsContext';
-import { ShoppingList } from '@/hooks/useShoppingLists';
+import { ShoppingItem, ShoppingList } from '@/hooks/useShoppingLists';
 import { useAuth } from '@/contexts/AuthContext';
+import VerificationOverlay from '@/components/VerificationOverlay';
+import { formatCurrency } from '@/consts/currencySymbols';
 
 const shoppingCategories = [
   { id: 'groceries', name: 'Groceries', icon: Utensils, color: '#36A2EB' },
   { id: 'clothing', name: 'Clothing', icon: Shirt, color: '#FF6384' },
   { id: 'household', name: 'Household', icon: Home, color: '#4BC0C0' },
   { id: 'electronics', name: 'Electronics', icon: Package, color: '#9966FF' },
-  { id: 'health', name: 'Health & Beauty', icon: Heart, color: '#FFCE56' },
+  { id: 'health', name: 'Health & Beauty', icon: Heart, color: '#ff6a00' },
   { id: 'general', name: 'General', icon: ShoppingBag, color: '#FF9F40' },
 ];
 
 export default function ShoppingScreen() {
   const theme = useTheme();
-  const { lists, loading, addList, addItem, toggleItem, deleteItem, refetch } =
-    useShoppingListsContext();
+  const {
+    lists,
+    loading,
+    addList,
+    addItem,
+    toggleItem,
+    deleteItem,
+    refetch,
+    updateItem,
+  } = useShoppingListsContext();
   const [activeCategory, setActiveCategory] = useState('groceries');
-  const { user } = useAuth();
+  const { user, profile, sendVerificationEmail, resendEmailDisabled } =
+    useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddOptionsModal, setShowAddOptionsModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [previousShoppingItems, setPreviousShoppingItems] = useState<
+    ShoppingItem[]
+  >([]);
   const [currentActiveList, setCurrentActiveList] = useState<
     ShoppingList | undefined
   >(undefined);
@@ -82,13 +98,6 @@ export default function ShoppingScreen() {
     (cat) => cat.id === activeCategory
   );
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
   const getTotalEstimated = () => {
     return activeItems.reduce(
       (sum, item) => sum + (item.estimated_cost || 0),
@@ -108,11 +117,41 @@ export default function ShoppingScreen() {
     toggleItem(itemId);
   };
 
+  const [showEditCostModal, setShowEditCostModal] = useState(false);
+  const [itemToEdit, setItemToEdit] = useState<ShoppingItem | null>(null);
+
+  const handleEditActualCost = (item: ShoppingItem) => {
+    setItemToEdit(item);
+    setShowEditCostModal(true);
+  };
+
+  const handleSaveActualCost = (itemId: string, newCost: number) => {
+    updateItem(itemId, { actual_cost: newCost });
+  };
+
   const handleAddItem = (itemData: any) => {
     if (currentActiveList && currentActiveList.id) {
       addItem(currentActiveList.id, itemData);
     }
     setShowAddModal(false);
+  };
+
+  const handleImportFromPrevious = async () => {
+    const allItems = activeItems;
+    setPreviousShoppingItems(allItems);
+    setShowImportModal(true);
+  };
+
+  const handleImportItems = (itemsToImport: ShoppingItem[]) => {
+    if (currentActiveList && currentActiveList.id) {
+      itemsToImport.forEach((item) => {
+        addItem(currentActiveList.id, {
+          name: item.name,
+          estimated_cost: item.estimated_cost || 0,
+        });
+      });
+    }
+    setShowImportModal(false);
   };
 
   const handleDeleteItem = (itemId: string) => {
@@ -218,7 +257,7 @@ export default function ShoppingScreen() {
               <Text
                 style={[styles.summaryValue, { color: theme.colors.onSurface }]}
               >
-                {formatCurrency(getTotalEstimated())}
+                {formatCurrency(getTotalEstimated(), profile)}
               </Text>
             </View>
             <View style={styles.summaryItem}>
@@ -233,7 +272,7 @@ export default function ShoppingScreen() {
               <Text
                 style={[styles.summaryValue, { color: theme.colors.error }]}
               >
-                {formatCurrency(getTotalActual())}
+                {formatCurrency(getTotalActual(), profile)}
               </Text>
             </View>
           </View>
@@ -270,11 +309,27 @@ export default function ShoppingScreen() {
               ]}
             >
               <Card.Content>
-                <View style={styles.itemRow}>
-                  <Checkbox
-                    status={item.is_purchased ? 'checked' : 'unchecked'}
-                    onPress={() => handleToggleItem(item.id)}
-                  />
+                <View
+                  style={[
+                    styles.itemRow,
+                    { opacity: item.is_purchased ? 0.6 : 1 },
+                  ]}
+                >
+                  <View style={styles.checkboxContainer}>
+                    {item.is_purchased ? (
+                      <CheckCircle
+                        size={24}
+                        color={theme.colors.primary}
+                        onPress={() => handleToggleItem(item.id)}
+                      />
+                    ) : (
+                      <Circle
+                        size={24}
+                        color={theme.colors.onSurfaceVariant}
+                        onPress={() => handleToggleItem(item.id)}
+                      />
+                    )}
+                  </View>
                   <View style={styles.itemDetails}>
                     <Text
                       style={[
@@ -296,17 +351,26 @@ export default function ShoppingScreen() {
                           { color: theme.colors.onSurfaceVariant },
                         ]}
                       >
-                        Est: {formatCurrency(item.estimated_cost || 0)}
+                        Est: {formatCurrency(item.estimated_cost || 0, profile)}
                       </Text>
                       {item.is_purchased && (
-                        <Text
-                          style={[
-                            styles.actualCost,
-                            { color: theme.colors.error },
-                          ]}
-                        >
-                          Actual: {formatCurrency(item.actual_cost || 0)}
-                        </Text>
+                        <View style={styles.actualCostContainer}>
+                          <Text
+                            style={[
+                              styles.actualCost,
+                              { color: theme.colors.error },
+                            ]}
+                            onPress={() => handleEditActualCost(item)}
+                          >
+                            Actual:{' '}
+                            {formatCurrency(item.actual_cost || 0, profile)}
+                          </Text>
+                          <Pencil
+                            size={14}
+                            color={theme.colors.error}
+                            onPress={() => handleEditActualCost(item)}
+                          />
+                        </View>
                       )}
                     </View>
                   </View>
@@ -328,7 +392,7 @@ export default function ShoppingScreen() {
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
         onPress={() => {
           if (currentActiveList && currentActiveList.id) {
-            setShowAddModal(true);
+            setShowAddOptionsModal(true);
           } else {
             Alert.alert(
               'Please wait',
@@ -343,6 +407,33 @@ export default function ShoppingScreen() {
         onDismiss={() => setShowAddModal(false)}
         onAddItem={handleAddItem}
         categoryName={activeCategoryData?.name || 'Shopping'}
+      />
+
+      <EditShoppingItemCostModal
+        visible={showEditCostModal}
+        onDismiss={() => setShowEditCostModal(false)}
+        item={itemToEdit}
+        onSave={handleSaveActualCost}
+      />
+
+      <AddOptionsModal
+        visible={showAddOptionsModal}
+        onDismiss={() => setShowAddOptionsModal(false)}
+        onAddNewItem={() => setShowAddModal(true)}
+        onImportFromPrevious={handleImportFromPrevious}
+      />
+
+      <ImportFromPreviousModal
+        visible={showImportModal}
+        onDismiss={() => setShowImportModal(false)}
+        previousItems={previousShoppingItems}
+        onImport={handleImportItems}
+      />
+
+      <VerificationOverlay
+        isVerified={user?.email_confirmed_at ? true : false}
+        onResendEmail={sendVerificationEmail}
+        resendDisabled={resendEmailDisabled}
       />
     </SafeAreaView>
   );
@@ -416,6 +507,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  checkboxContainer: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   itemDetails: {
     flex: 1,
     marginLeft: 8,
@@ -435,6 +532,18 @@ const styles = StyleSheet.create({
   actualCost: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  actualCostContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  actualCostInput: {
+    height: 30,
+    width: 120,
+    fontSize: 14,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
   },
   fab: {
     position: 'absolute',
