@@ -19,6 +19,10 @@ interface ShoppingListsContextType {
   deleteItem: (itemId: string) => Promise<{ success: boolean; error?: any }>;
   deleteList: (listId: string) => Promise<{ success: boolean; error?: any }>;
   refetch: () => Promise<void>;
+  updateItem: (
+    itemId: string,
+    updates: { actual_cost?: number; is_purchased?: boolean }
+  ) => Promise<{ success: boolean; error?: any }>;
 }
 
 const ShoppingListsContext = createContext<
