@@ -74,7 +74,7 @@ export function useIncome() {
 
       if (error) throw error;
 
-      setIncome(prev => [data, ...prev]);
+      await fetchIncome(); // Refetch income data
       return { success: true };
     } catch (error) {
       console.error('Error adding income:', error);
