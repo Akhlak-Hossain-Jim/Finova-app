@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { toSQLLocal } from '@/lib/utils/sqlDate';
 
 export interface ShoppingItem {
   id: string;
@@ -9,6 +10,7 @@ export interface ShoppingItem {
   actual_cost: number | null;
   is_purchased: boolean;
   created_at: string;
+  purchased_at: string;
 }
 
 export interface ShoppingList {
@@ -104,7 +106,6 @@ export function useShoppingLists() {
         .single();
 
       if (error) throw error;
-      console.log('Added shopping item data:', data);
 
       setLists((prev) =>
         prev.map((list) =>
@@ -134,6 +135,7 @@ export function useShoppingLists() {
       const updates = {
         is_purchased: !item.is_purchased,
         actual_cost: !item.is_purchased ? item.estimated_cost : null,
+        purchased_at: toSQLLocal(),
       };
 
       const { data, error } = await supabase
@@ -184,6 +186,35 @@ export function useShoppingLists() {
     }
   };
 
+  const updateItem = async (
+    itemId: string,
+    updates: { actual_cost?: number; is_purchased?: boolean }
+  ) => {
+    try {
+      const { data, error } = await supabase
+        .from('shopping_items')
+        .update(updates)
+        .eq('id', itemId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setLists((prev) =>
+        prev.map((list) => ({
+          ...list,
+          shopping_items: list.shopping_items?.map((item) =>
+            item.id === itemId ? data : item
+          ),
+        }))
+      );
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating shopping item:', error);
+      return { success: false, error };
+    }
+  };
+
   const deleteList = async (listId: string) => {
     try {
       const { error } = await supabase
@@ -201,6 +232,34 @@ export function useShoppingLists() {
     }
   };
 
+  const fetchAllShoppingItems = useCallback(async () => {
+    if (!user || !user.id) {
+      return [];
+    }
+    try {
+      const today = new Date();
+      const firstDayOfCurrentMonth = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        1
+      );
+
+      const { data, error } = await supabase
+        .from('shopping_items')
+        .select('*')
+        .eq('user_id', user.id)
+        .or(
+          `is_purchased.eq.false,created_at.gte.${firstDayOfCurrentMonth.toISOString()}`
+        );
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all shopping items:', error);
+      return [];
+    }
+  }, [user]);
+
   return {
     lists,
     loading,
@@ -210,5 +269,7 @@ export function useShoppingLists() {
     deleteItem,
     deleteList,
     refetch: fetchLists,
+    updateItem,
+    fetchAllShoppingItems,
   };
 }
