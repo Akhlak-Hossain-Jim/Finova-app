@@ -7,8 +7,7 @@ import {
   Title, 
   Button, 
   TextInput,
-  useTheme,
-  Text
+  useTheme
 } from 'react-native-paper';
 import { X, DollarSign, ShoppingCart } from 'lucide-react-native';
 
