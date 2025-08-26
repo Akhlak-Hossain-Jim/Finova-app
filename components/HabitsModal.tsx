@@ -1,20 +1,25 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { 
-  Modal, 
-  Portal, 
-  Card, 
-  Title, 
-  Button, 
+import {
+  Modal,
+  Portal,
+  Card,
+  Title,
+  Button,
   TextInput,
   useTheme,
   Text,
-  ProgressBar,
   FAB,
   Chip,
-  IconButton
+  IconButton,
 } from 'react-native-paper';
-import { X, Activity, Plus, Flame, Target, CircleCheck as CheckCircle } from 'lucide-react-native';
+import {
+  X,
+  Activity,
+  Plus,
+  Flame,
+  CircleCheck as CheckCircle,
+} from 'lucide-react-native';
 import { useHabits } from '@/hooks/useHabits';
 
 interface HabitsModalProps {
@@ -24,7 +29,7 @@ interface HabitsModalProps {
 
 export default function HabitsModal({ visible, onDismiss }: HabitsModalProps) {
   const theme = useTheme();
-  const { habits, addHabit, toggleHabit, loading } = useHabits();
+  const { habits, addHabit, toggleHabit } = useHabits();
   const [showAddHabit, setShowAddHabit] = useState(false);
   const [habitTitle, setHabitTitle] = useState('');
   const [habitCategory, setHabitCategory] = useState('financial');
@@ -34,13 +39,13 @@ export default function HabitsModal({ visible, onDismiss }: HabitsModalProps) {
     { id: 'financial', label: 'Financial', color: '#1976D2' },
     { id: 'earning', label: 'Earning', color: '#388E3C' },
     { id: 'saving', label: 'Saving', color: '#FBC02D' },
-    { id: 'health', label: 'Health', color: '#D32F2F' }
+    { id: 'health', label: 'Health', color: '#D32F2F' },
   ];
 
   const frequencies = [
     { id: 'daily', label: 'Daily' },
     { id: 'weekly', label: 'Weekly' },
-    { id: 'monthly', label: 'Monthly' }
+    { id: 'monthly', label: 'Monthly' },
   ];
 
   const handleAddHabit = () => {
@@ -50,11 +55,15 @@ export default function HabitsModal({ visible, onDismiss }: HabitsModalProps) {
 
     const habitData = {
       title: habitTitle,
-      category: categories.find(cat => cat.id === habitCategory)?.label || 'Financial',
-      frequency: frequencies.find(freq => freq.id === habitFrequency)?.label || 'Daily'
+      category:
+        categories.find((cat) => cat.id === habitCategory)?.label ||
+        'Financial',
+      frequency:
+        frequencies.find((freq) => freq.id === habitFrequency)?.label ||
+        'Daily',
     };
 
-    addHabit(habitData).then(result => {
+    addHabit(habitData).then((result) => {
       if (result.success) {
         setHabitTitle('');
         setHabitCategory('financial');
@@ -76,7 +85,7 @@ export default function HabitsModal({ visible, onDismiss }: HabitsModalProps) {
   };
 
   const getCategoryColor = (category: string) => {
-    const cat = categories.find(c => c.label === category);
+    const cat = categories.find((c) => c.label === category);
     return cat ? cat.color : '#1976D2';
   };
 
@@ -85,7 +94,10 @@ export default function HabitsModal({ visible, onDismiss }: HabitsModalProps) {
       <Modal
         visible={visible}
         onDismiss={onDismiss}
-        contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
+        contentContainerStyle={[
+          styles.modal,
+          { backgroundColor: theme.colors.surface },
+        ]}
       >
         <Card style={{ backgroundColor: theme.colors.surface }}>
           <Card.Content>
@@ -93,8 +105,8 @@ export default function HabitsModal({ visible, onDismiss }: HabitsModalProps) {
               <Title style={[styles.title, { color: theme.colors.onSurface }]}>
                 Habit Tracker
               </Title>
-              <Button 
-                mode="text" 
+              <Button
+                mode="text"
                 onPress={onDismiss}
                 icon={() => <X size={20} color={theme.colors.onSurface} />}
               >
@@ -103,44 +115,93 @@ export default function HabitsModal({ visible, onDismiss }: HabitsModalProps) {
             </View>
 
             {!showAddHabit ? (
-              <ScrollView showsVerticalScrollIndicator={false} style={styles.habitsList}>
-                {habits.map(habit => (
-                  <Card key={habit.id} style={[styles.habitCard, { backgroundColor: theme.colors.surfaceVariant }]}>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                style={styles.habitsList}
+              >
+                {habits.map((habit) => (
+                  <Card
+                    key={habit.id}
+                    style={[
+                      styles.habitCard,
+                      { backgroundColor: theme.colors.surfaceVariant },
+                    ]}
+                  >
                     <Card.Content>
                       <View style={styles.habitHeader}>
                         <View style={styles.habitInfo}>
-                          <Text style={[styles.habitTitle, { color: theme.colors.onSurface }]}>
+                          <Text
+                            style={[
+                              styles.habitTitle,
+                              { color: theme.colors.onSurface },
+                            ]}
+                          >
                             {habit.title}
                           </Text>
                           <View style={styles.habitMeta}>
                             <Chip
                               mode="outlined"
-                              style={[styles.categoryChip, { borderColor: getCategoryColor(habit.category) }]}
-                              textStyle={{ color: getCategoryColor(habit.category) }}
+                              style={[
+                                styles.categoryChip,
+                                {
+                                  borderColor: getCategoryColor(habit.category),
+                                },
+                              ]}
+                              textStyle={{
+                                color: getCategoryColor(habit.category),
+                              }}
                             >
                               {habit.category}
                             </Chip>
-                            <Text style={[styles.frequency, { color: theme.colors.onSurfaceVariant }]}>
+                            <Text
+                              style={[
+                                styles.frequency,
+                                { color: theme.colors.onSurfaceVariant },
+                              ]}
+                            >
                               {habit.frequency}
                             </Text>
                           </View>
                         </View>
                         <IconButton
                           icon={() => {
-                            const today = new Date().toISOString().split('T')[0];
-                            const completedToday = habit.last_completed === today;
-                            return completedToday
-                            ? <CheckCircle size={24} color={theme.colors.primary} />
-                            : <CheckCircle size={24} color={theme.colors.outline} />;
+                            const today = new Date()
+                              .toISOString()
+                              .split('T')[0];
+                            const completedToday =
+                              habit.last_completed === today;
+                            return completedToday ? (
+                              <CheckCircle
+                                size={24}
+                                color={theme.colors.primary}
+                              />
+                            ) : (
+                              <CheckCircle
+                                size={24}
+                                color={theme.colors.outline}
+                              />
+                            );
                           }}
                           onPress={() => toggleHabitCompletion(habit.id)}
                         />
                       </View>
-                      
+
                       <View style={styles.streakInfo}>
                         <View style={styles.streakItem}>
-                          <Flame size={16} color={habit.current_streak > 0 ? '#FF6B35' : theme.colors.outline} />
-                          <Text style={[styles.streakText, { color: theme.colors.onSurfaceVariant }]}>
+                          <Flame
+                            size={16}
+                            color={
+                              habit.current_streak > 0
+                                ? '#FF6B35'
+                                : theme.colors.outline
+                            }
+                          />
+                          <Text
+                            style={[
+                              styles.streakText,
+                              { color: theme.colors.onSurfaceVariant },
+                            ]}
+                          >
                             {habit.current_streak} day streak
                           </Text>
                         </View>
@@ -148,10 +209,19 @@ export default function HabitsModal({ visible, onDismiss }: HabitsModalProps) {
                           const today = new Date().toISOString().split('T')[0];
                           const completedToday = habit.last_completed === today;
                           return (
-                            <Text style={[styles.streakStatus, { 
-                              color: completedToday ? theme.colors.primary : theme.colors.error 
-                            }]}>
-                              {completedToday ? 'Completed Today' : 'Not Done Yet'}
+                            <Text
+                              style={[
+                                styles.streakStatus,
+                                {
+                                  color: completedToday
+                                    ? theme.colors.primary
+                                    : theme.colors.error,
+                                },
+                              ]}
+                            >
+                              {completedToday
+                                ? 'Completed Today'
+                                : 'Not Done Yet'}
                             </Text>
                           );
                         })()}
@@ -168,15 +238,28 @@ export default function HabitsModal({ visible, onDismiss }: HabitsModalProps) {
                   onChangeText={setHabitTitle}
                   mode="outlined"
                   style={styles.input}
-                  left={<TextInput.Icon icon={() => <Activity size={20} color={theme.colors.onSurfaceVariant} />} />}
+                  left={
+                    <TextInput.Icon
+                      icon={() => (
+                        <Activity
+                          size={20}
+                          color={theme.colors.onSurfaceVariant}
+                        />
+                      )}
+                    />
+                  }
                   placeholder="e.g., Log daily expenses"
                 />
 
                 <Text style={[styles.label, { color: theme.colors.onSurface }]}>
                   Category
                 </Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-                  {categories.map(category => (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.categoryScroll}
+                >
+                  {categories.map((category) => (
                     <Chip
                       key={category.id}
                       selected={habitCategory === category.id}
@@ -192,8 +275,12 @@ export default function HabitsModal({ visible, onDismiss }: HabitsModalProps) {
                 <Text style={[styles.label, { color: theme.colors.onSurface }]}>
                   Frequency
                 </Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.frequencyScroll}>
-                  {frequencies.map(frequency => (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.frequencyScroll}
+                >
+                  {frequencies.map((frequency) => (
                     <Chip
                       key={frequency.id}
                       selected={habitFrequency === frequency.id}
@@ -224,16 +311,15 @@ export default function HabitsModal({ visible, onDismiss }: HabitsModalProps) {
                 </View>
               </View>
             )}
+            {!showAddHabit && (
+              <FAB
+                icon={() => <Plus size={24} color={theme.colors.onPrimary} />}
+                style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+                onPress={() => setShowAddHabit(true)}
+              />
+            )}
           </Card.Content>
         </Card>
-
-        {!showAddHabit && (
-          <FAB
-            icon={() => <Plus size={24} color={theme.colors.onPrimary} />}
-            style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-            onPress={() => setShowAddHabit(true)}
-          />
-        )}
       </Modal>
     </Portal>
   );
@@ -337,9 +423,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fab: {
-    position: 'absolute',
-    right: 16,
-    bottom: 16,
+    alignItems: 'center',
+    marginHorizontal: 'auto',
     elevation: 6,
   },
 });
