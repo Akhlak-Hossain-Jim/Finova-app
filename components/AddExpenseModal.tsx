@@ -1,18 +1,29 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { 
-  Modal, 
-  Portal, 
-  Card, 
-  Title, 
-  Button, 
+import {
+  Modal,
+  Portal,
+  Card,
+  Title,
+  Button,
   TextInput,
   useTheme,
   Text,
   Chip,
-  SegmentedButtons
+  SegmentedButtons,
 } from 'react-native-paper';
-import { X, DollarSign, Home, ShoppingBag, Car, Heart, CreditCard, Users, Gift, Calendar } from 'lucide-react-native';
+import {
+  X,
+  DollarSign,
+  Home,
+  ShoppingBag,
+  Car,
+  Heart,
+  CreditCard,
+  Users,
+  Gift,
+  Calendar,
+} from 'lucide-react-native';
 import { useExpensesContext } from '@/contexts/ExpensesContext';
 
 interface AddExpenseModalProps {
@@ -24,20 +35,23 @@ interface AddExpenseModalProps {
 
 const getCategoryIcon = (categoryName: string) => {
   const iconMap: { [key: string]: any } = {
-    'housing': Home,
-    'food': ShoppingBag,
-    'shopping': ShoppingBag,
-    'health': Heart,
-    'transport': Car,
-    'financial': CreditCard,
-    'family': Users,
-    'charity': Gift,
-    'annual': Calendar
+    housing: Home,
+    food: ShoppingBag,
+    shopping: ShoppingBag,
+    health: Heart,
+    transport: Car,
+    financial: CreditCard,
+    family: Users,
+    charity: Gift,
+    annual: Calendar,
   };
   return iconMap[categoryName.toLowerCase()] || ShoppingBag;
 };
 
-export default function AddExpenseModal({ visible, onDismiss }: AddExpenseModalProps) {
+export default function AddExpenseModal({
+  visible,
+  onDismiss,
+}: AddExpenseModalProps) {
   const theme = useTheme();
   const { categories, addExpense } = useExpensesContext();
   const [amount, setAmount] = useState('');
@@ -50,7 +64,7 @@ export default function AddExpenseModal({ visible, onDismiss }: AddExpenseModalP
     { value: 'self', label: 'Self' },
     { value: 'spouse', label: 'Spouse' },
     { value: 'children', label: 'Children' },
-    { value: 'parents', label: 'Parents' }
+    { value: 'parents', label: 'Parents' },
   ];
 
   const resetForm = () => {
@@ -71,11 +85,13 @@ export default function AddExpenseModal({ visible, onDismiss }: AddExpenseModalP
       description,
       category_id: selectedCategory,
       subcategory: selectedSubcategory,
-      family_member: familyMembers.find(member => member.value === familyMember)?.label || 'Self',
-      date: new Date().toISOString().split('T')[0]
+      family_member:
+        familyMembers.find((member) => member.value === familyMember)?.label ||
+        'Self',
+      date: new Date().toISOString().split('T')[0],
     };
 
-    addExpense(expenseData).then(result => {
+    addExpense(expenseData).then((result) => {
       if (result.success) {
         resetForm();
         onDismiss();
@@ -84,14 +100,19 @@ export default function AddExpenseModal({ visible, onDismiss }: AddExpenseModalP
   };
 
   const safeCategories = categories || [];
-  const selectedCategoryData = safeCategories.find(cat => cat.id === selectedCategory);
+  const selectedCategoryData = safeCategories.find(
+    (cat) => cat.id === selectedCategory
+  );
 
   return (
     <Portal>
       <Modal
         visible={visible}
         onDismiss={onDismiss}
-        contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
+        contentContainerStyle={[
+          styles.modal,
+          { backgroundColor: theme.colors.surface },
+        ]}
       >
         <Card style={{ backgroundColor: theme.colors.surface }}>
           <Card.Content>
@@ -99,8 +120,8 @@ export default function AddExpenseModal({ visible, onDismiss }: AddExpenseModalP
               <Title style={[styles.title, { color: theme.colors.onSurface }]}>
                 Add Expense
               </Title>
-              <Button 
-                mode="text" 
+              <Button
+                mode="text"
                 onPress={onDismiss}
                 icon={() => <X size={20} color={theme.colors.onSurface} />}
               >
@@ -117,7 +138,16 @@ export default function AddExpenseModal({ visible, onDismiss }: AddExpenseModalP
                 keyboardType="numeric"
                 mode="outlined"
                 style={styles.input}
-                left={<TextInput.Icon icon={() => <DollarSign size={20} color={theme.colors.onSurfaceVariant} />} />}
+                left={
+                  <TextInput.Icon
+                    icon={() => (
+                      <DollarSign
+                        size={20}
+                        color={theme.colors.onSurfaceVariant}
+                      />
+                    )}
+                  />
+                }
               />
 
               {/* Description Input */}
@@ -134,8 +164,12 @@ export default function AddExpenseModal({ visible, onDismiss }: AddExpenseModalP
               <Text style={[styles.label, { color: theme.colors.onSurface }]}>
                 Category
               </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-                {safeCategories.map(category => (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.categoryScroll}
+              >
+                {safeCategories.map((category) => (
                   <Chip
                     key={category.id}
                     selected={selectedCategory === category.id}
@@ -157,20 +191,28 @@ export default function AddExpenseModal({ visible, onDismiss }: AddExpenseModalP
               {/* Subcategory Selection */}
               {selectedCategoryData && (
                 <>
-                  <Text style={[styles.label, { color: theme.colors.onSurface }]}>
+                  <Text
+                    style={[styles.label, { color: theme.colors.onSurface }]}
+                  >
                     Subcategory
                   </Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.subcategoryScroll}>
-                    {(selectedCategoryData.subcategories || []).map((subcategory: string) => (
-                      <Chip
-                        key={subcategory}
-                        selected={selectedSubcategory === subcategory}
-                        onPress={() => setSelectedSubcategory(subcategory)}
-                        style={styles.subcategoryChip}
-                      >
-                        {subcategory}
-                      </Chip>
-                    ))}
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.subcategoryScroll}
+                  >
+                    {(selectedCategoryData.subcategories || []).map(
+                      (subcategory: string) => (
+                        <Chip
+                          key={subcategory}
+                          selected={selectedSubcategory === subcategory}
+                          onPress={() => setSelectedSubcategory(subcategory)}
+                          style={styles.subcategoryChip}
+                        >
+                          {subcategory}
+                        </Chip>
+                      )
+                    )}
                   </ScrollView>
                 </>
               )}
@@ -191,7 +233,12 @@ export default function AddExpenseModal({ visible, onDismiss }: AddExpenseModalP
                 mode="contained"
                 onPress={handleSubmit}
                 style={styles.submitButton}
-                disabled={!amount || !description || !selectedCategory || !selectedSubcategory}
+                disabled={
+                  !amount ||
+                  !description ||
+                  !selectedCategory ||
+                  !selectedSubcategory
+                }
               >
                 Add Expense
               </Button>
