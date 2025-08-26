@@ -70,14 +70,15 @@ export function IncomeProvider({ children }: { children: React.ReactNode }) {
           {
             ...incomeData,
             user_id: user?.id,
-          }
+          },
         ])
-        .select()
+        .select('id, source, amount, date, description, created_at')
         .single();
 
       if (error) throw error;
 
       setIncome(prev => [data, ...prev]);
+      await fetchIncome(); // Refetch income data
       return { success: true };
     } catch (error) {
       console.error('Error adding income:', error);
