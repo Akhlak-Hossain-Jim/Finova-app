@@ -15,9 +15,10 @@ import AddIncomeModal from '@/components/AddIncomeModal';
 import { useAuth } from '@/contexts/AuthContext';
 import VerificationOverlay from '@/components/VerificationOverlay';
 import { router } from 'expo-router';
-import { getCurrencySymbol } from '@/consts/currencySymbols';
+import { formatCurrency } from '@/consts/currencySymbols';
 import { useIncomeContext } from '@/contexts/IncomeContext';
 import { useSavingsGoalsContext } from '@/contexts/SavingsGoalsContext';
+import { useShoppingListsContext } from '@/contexts/ShoppingListsContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -26,17 +27,11 @@ export default function HomeScreen() {
   const { expenses, loading: expensesLoading } = useExpensesContext();
   const { income, loading: incomeLoading } = useIncomeContext();
   const { loading: goalsLoading } = useSavingsGoalsContext();
-  const { user, sendVerificationEmail, resendEmailDisabled } = useAuth();
-  const [showAddIncomeModal, setShowAddIncomeModal] = useState(false);
+  const { user, profile, sendVerificationEmail, resendEmailDisabled } =
+    useAuth();
+  const { lists: ShoppingList } = useShoppingListsContext();
 
-  const formatCurrency = (amount: number) => {
-    const userCurrency = user?.user_metadata?.currency || 'USD';
-    const symbol = getCurrencySymbol(userCurrency);
-    return `${symbol}${new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount)}`;
-  };
+  const [showAddIncomeModal, setShowAddIncomeModal] = useState(false);
 
   // Calculate current month data
   const currentMonth = new Date().getMonth();
@@ -62,7 +57,23 @@ export default function HomeScreen() {
     })
     .reduce((sum, expense) => sum + expense.amount, 0);
 
-  const monthlySavings = monthlyIncome - monthlyExpenses;
+  const monthlyShoppingExpenses = ShoppingList.map(
+    (lists) => lists.shopping_items
+  )
+    .flat()
+    .filter((listItem) => {
+      if (listItem?.is_purchased && listItem?.purchased_at) {
+        const purchaseDate = new Date(listItem.purchased_at);
+        return (
+          purchaseDate.getMonth() === currentMonth &&
+          purchaseDate.getFullYear() === currentYear
+        );
+      }
+    })
+    .reduce((sum, listItem) => sum + (listItem?.actual_cost ?? 0), 0);
+
+  const monthlySavings =
+    monthlyIncome - (monthlyExpenses + monthlyShoppingExpenses);
   const savingsRate =
     monthlyIncome > 0 ? Math.round((monthlySavings / monthlyIncome) * 100) : 0;
 
@@ -207,7 +218,7 @@ export default function HomeScreen() {
                           { color: theme.colors.onPrimaryContainer },
                         ]}
                       >
-                        {formatCurrency(monthlyIncome)}
+                        {formatCurrency(monthlyIncome, profile)}
                       </Text>
                       <Text
                         style={[
@@ -238,7 +249,10 @@ export default function HomeScreen() {
                           { color: theme.colors.onErrorContainer },
                         ]}
                       >
-                        {formatCurrency(monthlyExpenses)}
+                        {formatCurrency(
+                          monthlyExpenses + monthlyShoppingExpenses,
+                          profile
+                        )}
                       </Text>
                       <Text
                         style={[
@@ -271,7 +285,7 @@ export default function HomeScreen() {
                           { color: theme.colors.onSecondaryContainer },
                         ]}
                       >
-                        {formatCurrency(monthlySavings)}
+                        {formatCurrency(monthlySavings, profile)}
                       </Text>
                       <Text
                         style={[
@@ -403,7 +417,7 @@ export default function HomeScreen() {
                           ]}
                         >
                           {transaction.amount > 0 ? '+' : ''}
-                          {formatCurrency(transaction.amount)}
+                          {formatCurrency(transaction.amount, profile)}
                         </Text>
                       </View>
                       {index < recentTransactions.length - 1 && (
