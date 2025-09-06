@@ -2,7 +2,7 @@
   "expo": {
     "name": "Finova",
     "slug": "Finova",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "finova",
@@ -10,7 +10,9 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "associatedDomains": ["applinks:finova.akhlak.dev"]
+      "associatedDomains": [
+        "applinks:finova.akhlak.dev"
+      ]
     },
     "android": {
       "package": "dev.akhlak.finova",
@@ -29,7 +31,10 @@
               "host": "finova.akhlak.dev"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
