@@ -1,13 +1,19 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
-import { 
-  Card, 
-  Title, 
-  Button, 
-  TextInput, 
-  useTheme, 
+import {
+  View,
+  StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import {
+  Card,
+  Title,
+  Button,
+  TextInput,
+  useTheme,
   Text,
-  Divider
+  Divider,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
@@ -16,7 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function SignUpScreen() {
   const theme = useTheme();
-  const { signUp } = useAuth();
+  const { signUp, sendVerificationEmail } = useAuth();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,13 +54,12 @@ export default function SignUpScreen() {
     if (error) {
       Alert.alert('Sign Up Error', error.message);
     } else {
-      // Send verification email immediately after successful signup
       const { error: sendError } = await sendVerificationEmail();
       if (sendError) {
         Alert.alert('Verification Email Error', sendError.message);
       }
       Alert.alert(
-        'Success', 
+        'Success',
         'Account created successfully! Please check your email to verify your account.',
         [{ text: 'OK' }]
       );
@@ -68,8 +73,10 @@ export default function SignUpScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <KeyboardAvoidingView 
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
@@ -78,12 +85,19 @@ export default function SignUpScreen() {
             <Title style={[styles.title, { color: theme.colors.primary }]}>
               Join Finova
             </Title>
-            <Text style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+            <Text
+              style={[
+                styles.subtitle,
+                { color: theme.colors.onSurfaceVariant },
+              ]}
+            >
               Create your account to start tracking finances
             </Text>
           </View>
 
-          <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+          <Card
+            style={[styles.card, { backgroundColor: theme.colors.surface }]}
+          >
             <Card.Content>
               <TextInput
                 label="Full Name"
@@ -91,7 +105,13 @@ export default function SignUpScreen() {
                 onChangeText={setFullName}
                 mode="outlined"
                 style={styles.input}
-                left={<TextInput.Icon icon={() => <User size={20} color={theme.colors.onSurfaceVariant} />} />}
+                left={
+                  <TextInput.Icon
+                    icon={() => (
+                      <User size={20} color={theme.colors.onSurfaceVariant} />
+                    )}
+                  />
+                }
               />
 
               <TextInput
@@ -102,7 +122,13 @@ export default function SignUpScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 style={styles.input}
-                left={<TextInput.Icon icon={() => <Mail size={20} color={theme.colors.onSurfaceVariant} />} />}
+                left={
+                  <TextInput.Icon
+                    icon={() => (
+                      <Mail size={20} color={theme.colors.onSurfaceVariant} />
+                    )}
+                  />
+                }
               />
 
               <TextInput
@@ -112,12 +138,24 @@ export default function SignUpScreen() {
                 mode="outlined"
                 secureTextEntry={!showPassword}
                 style={styles.input}
-                left={<TextInput.Icon icon={() => <Lock size={20} color={theme.colors.onSurfaceVariant} />} />}
+                left={
+                  <TextInput.Icon
+                    icon={() => (
+                      <Lock size={20} color={theme.colors.onSurfaceVariant} />
+                    )}
+                  />
+                }
                 right={
-                  <TextInput.Icon 
-                    icon={() => showPassword 
-                      ? <EyeOff size={20} color={theme.colors.onSurfaceVariant} />
-                      : <Eye size={20} color={theme.colors.onSurfaceVariant} />
+                  <TextInput.Icon
+                    icon={() =>
+                      showPassword ? (
+                        <EyeOff
+                          size={20}
+                          color={theme.colors.onSurfaceVariant}
+                        />
+                      ) : (
+                        <Eye size={20} color={theme.colors.onSurfaceVariant} />
+                      )
                     }
                     onPress={() => setShowPassword(!showPassword)}
                   />
@@ -131,12 +169,24 @@ export default function SignUpScreen() {
                 mode="outlined"
                 secureTextEntry={!showConfirmPassword}
                 style={styles.input}
-                left={<TextInput.Icon icon={() => <Lock size={20} color={theme.colors.onSurfaceVariant} />} />}
+                left={
+                  <TextInput.Icon
+                    icon={() => (
+                      <Lock size={20} color={theme.colors.onSurfaceVariant} />
+                    )}
+                  />
+                }
                 right={
-                  <TextInput.Icon 
-                    icon={() => showConfirmPassword 
-                      ? <EyeOff size={20} color={theme.colors.onSurfaceVariant} />
-                      : <Eye size={20} color={theme.colors.onSurfaceVariant} />
+                  <TextInput.Icon
+                    icon={() =>
+                      showConfirmPassword ? (
+                        <EyeOff
+                          size={20}
+                          color={theme.colors.onSurfaceVariant}
+                        />
+                      ) : (
+                        <Eye size={20} color={theme.colors.onSurfaceVariant} />
+                      )
                     }
                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                   />
@@ -156,7 +206,12 @@ export default function SignUpScreen() {
               <Divider style={styles.divider} />
 
               <View style={styles.signInContainer}>
-                <Text style={[styles.signInText, { color: theme.colors.onSurfaceVariant }]}>
+                <Text
+                  style={[
+                    styles.signInText,
+                    { color: theme.colors.onSurfaceVariant },
+                  ]}
+                >
                   Already have an account?{' '}
                 </Text>
                 <Link href="/(auth)/signin" asChild>
