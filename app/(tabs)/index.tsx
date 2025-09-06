@@ -207,6 +207,7 @@ export default function HomeScreen() {
                   styles.summaryCard,
                   { backgroundColor: theme.colors.primaryContainer },
                 ]}
+                onPress={() => router.push('/incomes')}
               >
                 <Card.Content>
                   <View style={styles.summaryCardContent}>
