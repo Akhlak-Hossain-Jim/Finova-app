@@ -30,6 +30,14 @@ export default function WelcomeScreen() {
       </View>
       <View style={styles.buttonContainer}>
         <Button
+          mode="text"
+          onPress={() => router.push('/signin')}
+          style={styles.button}
+          labelStyle={styles.buttonLabel}
+        >
+          Signin
+        </Button>
+        <Button
           mode="contained"
           onPress={() => router.push('/signup')}
           style={styles.button}
