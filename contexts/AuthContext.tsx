@@ -59,53 +59,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const initializeAuth = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
-      setUser(session?.user || null);
-
-      if (session?.user) {
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('id, full_name, currency, monthly_income')
-          .eq('id', session.user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching profile:', error);
-        } else if (profileData) {
-          setProfile(profileData);
-        }
-      }
-
+      setUser(session?.user ?? null);
       setLoading(false);
-      console.log('Setting loading to false after the config');
     };
 
     initializeAuth();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      setUser(session?.user || null);
-
-      if (session?.user) {
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('id, full_name, currency, monthly_income')
-          .eq('id', session.user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching profile:', error);
-        } else if (profileData) {
-          setProfile(profileData);
-        }
-      } else {
-        setProfile(null);
-      }
     });
 
     return () => {
