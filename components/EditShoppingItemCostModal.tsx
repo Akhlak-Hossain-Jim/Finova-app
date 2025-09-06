@@ -67,7 +67,7 @@ export default function EditShoppingItemCostModal({
           keyboardType="numeric"
           mode="outlined"
           style={styles.textInput}
-          right={<TextInput.Affix text={profile?.currency ?? 'USD'} />}
+          right={<TextInput.Affix text={profile?.currency ?? 'BDT'} />}
         />
         <View style={styles.buttonContainer}>
           <Button onPress={onDismiss} mode="outlined" style={styles.button}>
