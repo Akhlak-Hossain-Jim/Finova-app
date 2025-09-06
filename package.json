@@ -2,7 +2,8 @@
   "name": "finova",
   "main": "index.js",
   "version": "0.1.6",
-  "private": true,
+  "license": "CC-BY-NC-SA-4.0",
+  "private": false,
   "expo": {
     "doctor": {
       "reactNativeDirectoryCheck": {
