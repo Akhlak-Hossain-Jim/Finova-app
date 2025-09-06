@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import {
   Card,
@@ -64,10 +64,10 @@ export default function ShoppingScreen() {
   const [currentActiveList, setCurrentActiveList] = useState<
     ShoppingList | undefined
   >(undefined);
+  const [filteredItems, setFilteredItems] = useState<ShoppingItem[]>([]);
 
   useEffect(() => {
     const updateActiveList = async () => {
-      // Only proceed if loading is false, meaning lists have been fetched
       if (!loading) {
         const categoryData = shoppingCategories.find(
           (cat) => cat.id === activeCategory
@@ -75,15 +75,14 @@ export default function ShoppingScreen() {
         let foundList = lists.find((list) => list.category === activeCategory);
 
         if (!foundList && categoryData && user?.id) {
-          // Create a new list for this category and await its creation
           const result = await addList({
             category: activeCategory,
             name: categoryData.name,
           });
 
           if (result.success && result.data) {
-            foundList = result.data; // Use the actual list data returned from the database
-            await refetch(); // Ensure lists are re-fetched after adding a new one
+            foundList = result.data;
+            await refetch();
           }
         }
         setCurrentActiveList(foundList);
@@ -93,24 +92,53 @@ export default function ShoppingScreen() {
     updateActiveList();
   }, [activeCategory, lists, addList, refetch, loading, user?.id]);
 
-  const activeItems = currentActiveList?.shopping_items || [];
+  const activeItems = useMemo(
+    () => currentActiveList?.shopping_items || [],
+    [currentActiveList]
+  );
+
+  useEffect(() => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+
+    const items = activeItems.filter((item) => {
+      if (!item.is_purchased) {
+        return true;
+      }
+
+      if (item.purchased_at) {
+        const purchasedDate = new Date(item.purchased_at);
+        return (
+          purchasedDate.getMonth() === currentMonth &&
+          purchasedDate.getFullYear() === currentYear
+        );
+      }
+
+      return false;
+    });
+
+    setFilteredItems(items);
+  }, [activeItems]);
   const activeCategoryData = shoppingCategories.find(
     (cat) => cat.id === activeCategory
   );
 
   const getTotalEstimated = () => {
-    return activeItems.reduce(
+    return filteredItems.reduce(
       (sum, item) => sum + (item.estimated_cost || 0),
       0
     );
   };
 
   const getTotalActual = () => {
-    return activeItems.reduce((sum, item) => sum + (item.actual_cost || 0), 0);
+    return filteredItems.reduce(
+      (sum, item) => sum + (item.actual_cost || 0),
+      0
+    );
   };
 
   const getPurchasedCount = () => {
-    return activeItems.filter((item) => item.is_purchased).length;
+    return filteredItems.filter((item) => item.is_purchased).length;
   };
 
   const handleToggleItem = (itemId: string) => {
@@ -227,7 +255,7 @@ export default function ShoppingScreen() {
               <Text
                 style={[styles.summaryValue, { color: theme.colors.onSurface }]}
               >
-                {activeItems.length}
+                {filteredItems.length}
               </Text>
             </View>
             <View style={styles.summaryItem}>
@@ -281,7 +309,7 @@ export default function ShoppingScreen() {
 
       {/* Shopping Items */}
       <ScrollView style={styles.itemsList} showsVerticalScrollIndicator={false}>
-        {activeItems.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <Card
             style={[
               styles.emptyCard,
@@ -300,7 +328,7 @@ export default function ShoppingScreen() {
             </Card.Content>
           </Card>
         ) : (
-          activeItems.map((item) => (
+          filteredItems.map((item) => (
             <Card
               key={item.id}
               style={[
