@@ -48,14 +48,14 @@ export default function MoreScreen() {
   const [userProfile, setUserProfile] = useState({
     name: user?.user_metadata?.full_name || 'User',
     email: user?.email || '',
-    currency: profile?.currency || 'USD',
+    currency: profile?.currency || 'BDT',
   });
 
   useEffect(() => {
     setUserProfile({
       name: user?.user_metadata?.full_name || 'User',
       email: user?.email || '',
-      currency: profile?.currency || 'USD',
+      currency: profile?.currency || 'BDT',
     });
   }, [user, profile]);
 
