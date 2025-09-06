@@ -1,17 +1,20 @@
 import LoadingScreen from '@/components/LoadingScreen';
 import { useAuth } from '@/contexts/AuthContext';
-import { Redirect } from 'expo-router';
+import { router } from 'expo-router';
+import { useEffect } from 'react';
 
 export default function App() {
   const { session, loading } = useAuth();
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  useEffect(() => {
+    if (!loading) {
+      if (!session) {
+        router.replace('/(auth)/welcome');
+      } else {
+        router.replace('/(tabs)');
+      }
+    }
+  }, [loading, session]);
 
-  if (!session) {
-    return <Redirect href="/(auth)/welcome" />;
-  }
-
-  return <Redirect href="/(tabs)" />;
+  return <LoadingScreen />;
 }
