@@ -30,7 +30,7 @@ export default function EditProfileScreen() {
   const [userProfile] = useState({
     name: user?.user_metadata?.full_name || 'User',
     email: user?.email || '',
-    currency: profile?.currency ?? 'USD',
+    currency: profile?.currency ?? 'BDT',
   });
 
   const [editForm, setEditForm] = useState({
@@ -157,6 +157,7 @@ export default function EditProfileScreen() {
                     backgroundColor: theme.colors.surface,
                   },
                 ]}
+                itemStyle={{ color: '#ffffff' }}
               >
                 {currencies.map((currency) => (
                   <Picker.Item
