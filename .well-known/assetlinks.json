@@ -1,0 +1,15 @@
+[
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls",
+            "delegate_permission/common.get_login_creds"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "dev.akhlak.finova",
+            "sha256_cert_fingerprints": [
+                "B9:C3:57:C1:3C:3B:B2:E1:2E:04:02:27:61:D6:1F:07:8E:85:4D:6E:7E:BF:55:AE:05:15:2D:C1:26:81:8D:9F"
+            ]
+        }
+    }
+]
