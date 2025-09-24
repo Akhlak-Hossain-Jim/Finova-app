@@ -16,7 +16,7 @@ export default function LoadingScreen() {
       <Text
         style={{
           textAlign: 'center',
-          color: '#000',
+          color: theme?.colors.onBackground,
           marginTop: 24,
           marginRight: 20,
           fontSize: 18,
