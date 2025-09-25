@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Platform } from 'react-native';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import {
   Card,
@@ -60,14 +60,16 @@ export default function MoreScreen() {
   }, [user, profile]);
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: signOut,
-      },
-    ]);
+    if (Platform.OS === 'web') signOut();
+    else
+      Alert.alert('Logout', 'Are you sure you want to logout?', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: signOut,
+        },
+      ]);
   };
 
   const handleFamilyMembers = () => {

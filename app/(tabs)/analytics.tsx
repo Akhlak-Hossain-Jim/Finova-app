@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, Dimensions } from 'react-native';
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  Dimensions,
+  Platform,
+} from 'react-native';
 import { Card, useTheme, Text, SegmentedButtons } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PieChart, BarChart } from 'react-native-gifted-charts';
@@ -376,7 +382,13 @@ export default function AnalyticsScreen() {
                 >
                   Expense Breakdown
                 </Text>
-                <View style={{ alignItems: 'center' }}>
+                <View
+                  style={{
+                    alignItems: 'center',
+                    transform: [{ scale: Platform?.OS === 'web' ? 0.42 : 1 }],
+                    marginVertical: Platform?.OS === 'web' ? '-60%' : 0,
+                  }}
+                >
                   <PieChart
                     data={expensePieData}
                     donut
@@ -669,7 +681,13 @@ export default function AnalyticsScreen() {
                 >
                   Expense Breakdown
                 </Text>
-                <View style={{ alignItems: 'center' }}>
+                <View
+                  style={{
+                    alignItems: 'center',
+                    transform: [{ scale: Platform?.OS === 'web' ? 0.42 : 1 }],
+                    marginVertical: Platform?.OS === 'web' ? '-60%' : 0,
+                  }}
+                >
                   <PieChart
                     data={yearlyExpensePieData}
                     donut

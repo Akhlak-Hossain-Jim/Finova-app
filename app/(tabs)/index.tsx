@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, Dimensions } from 'react-native';
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  Dimensions,
+  Platform,
+} from 'react-native';
 import { Card, Button, FAB, useTheme, Text, Divider } from 'react-native-paper';
 import { PieChart } from 'react-native-gifted-charts';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -351,7 +357,13 @@ export default function HomeScreen() {
                   >
                     Expense Breakdown
                   </Text>
-                  <View style={{ alignItems: 'center' }}>
+                  <View
+                    style={{
+                      alignItems: 'center',
+                      transform: [{ scale: Platform?.OS === 'web' ? 0.42 : 1 }],
+                      marginVertical: Platform?.OS === 'web' ? '-60%' : 0,
+                    }}
+                  >
                     <PieChart
                       data={expensePieData}
                       donut
